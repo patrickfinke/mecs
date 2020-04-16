@@ -1,3 +1,7 @@
+"""An implementation of the Entity Component System (ECS) paradigm."""
+
+__version__ = '1.0.0'
+
 class Scene():
     def __init__(self):
         self.entitymap = {} # {eid: (archetype, index)}
