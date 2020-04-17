@@ -325,18 +325,18 @@ class SceneTestCase(unittest.TestCase):
 
         self.assertRaises(ValueError, self.scene.remove, self.eid, ComponentA)
 
-    def test_filter_A(self):
+    def test_select_A(self):
         # case no components
         self.scene.add(self.eid1, self.componentA1)
         self.scene.add(self.eid2, self.componentA2)
         self.scene.add(self.eid3, self.componentA3)
 
         resulteid = []
-        for eid, () in self.scene.filter():
+        for eid, () in self.scene.select():
             resulteid.append(eid)
         self.assertEqual(set(resulteid), set((self.eid1, self.eid2, self.eid3)))
 
-    def test_filter_B(self):
+    def test_select_B(self):
         # case one component
         self.scene.add(self.eid1, self.componentA1)
         self.scene.add(self.eid2, self.componentA2)
@@ -344,7 +344,7 @@ class SceneTestCase(unittest.TestCase):
 
         resulteid = []
         resultcompA = []
-        for eid, (compA,) in self.scene.filter(ComponentA):
+        for eid, (compA,) in self.scene.select(ComponentA):
             resulteid.append(eid)
             resultcompA.append(compA)
         self.assertEqual(set(resulteid), set((self.eid1, self.eid2, self.eid3)))
@@ -352,7 +352,7 @@ class SceneTestCase(unittest.TestCase):
         for eid, compA in zip(resulteid, resultcompA):
             self.assertEqual(self.scene.get(eid, ComponentA), compA)
 
-    def test_filter_C(self):
+    def test_select_C(self):
         # case two components
         self.scene.add(self.eid1, self.componentA1)
         self.scene.add(self.eid1, self.componentB1)
@@ -364,7 +364,7 @@ class SceneTestCase(unittest.TestCase):
         resulteid = []
         resultcompA = []
         resultcompB = []
-        for eid, (compA, compB) in self.scene.filter(ComponentA, ComponentB):
+        for eid, (compA, compB) in self.scene.select(ComponentA, ComponentB):
             resulteid.append(eid)
             resultcompA.append(compA)
             resultcompB.append(compB)
@@ -375,7 +375,7 @@ class SceneTestCase(unittest.TestCase):
             self.assertEqual(self.scene.get(eid, ComponentA), compA)
             self.assertEqual(self.scene.get(eid, ComponentB), compB)
 
-    def test_filter_D(self):
+    def test_select_D(self):
         # case two components, exclude one
         self.scene.add(self.eid1, self.componentA1)
         self.scene.add(self.eid2, self.componentA2)
@@ -385,7 +385,7 @@ class SceneTestCase(unittest.TestCase):
 
         resulteid = []
         resultcompA = []
-        for eid, (compA,) in self.scene.filter(ComponentA, exclude=(ComponentB,)):
+        for eid, (compA,) in self.scene.select(ComponentA, exclude=(ComponentB,)):
             resulteid.append(eid)
             resultcompA.append(compA)
         self.assertEqual(set(resulteid), set((self.eid1, self.eid2)))
@@ -393,11 +393,11 @@ class SceneTestCase(unittest.TestCase):
         for eid, compA in zip(resulteid, resultcompA):
             self.assertEqual(self.scene.get(eid, ComponentA), compA)
 
-    def test_filter_XA(self):
+    def test_select_XA(self):
         # ValueError
         #self.assertRaises(ValueError, self.scene.filter, ComponentA, ComponentB, exclude=(ComponentA,))
         with self.assertRaises(ValueError):
-            [_ for _ in self.scene.filter(ComponentA, ComponentB, exclude=(ComponentA,))] # use generator to raise exception
+            next(iter(self.scene.select(ComponentA, ComponentB, exclude=(ComponentA,)))) # use generator to raise exception
 
 
 if __name__ == "__main__":

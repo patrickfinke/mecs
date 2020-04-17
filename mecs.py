@@ -320,7 +320,7 @@ class Scene():
             self._processBuffers()
 
 
-    def filter(self, *comptypes, exclude=None):
+    def select(self, *comptypes, exclude=None):
         """Iterate over entity ids and their corresponding components. Yields tuples of the form (eid, (compA, compB, ...)) where compA, compB, ... are of the given component types and belong to the entity with entity id eid. If no component types are given, iterate over all entities. If exclude is not None, entities with component types listed in exclude will not be returned. Raises ValueError if exclude component types that are explicitly requested."""
 
         if exclude and any(ct in exclude for ct in comptypes):
