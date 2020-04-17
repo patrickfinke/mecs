@@ -16,9 +16,6 @@ class Scene():
             return newarchetype
         return next(iter(x for x in self.chunkmap if x == newarchetype)) # find in cache
 
-    def _processBuffers(self):
-        pass
-
 
     def new(self):
         """Returns a valid and previously unused entity id."""
@@ -298,26 +295,20 @@ class Scene():
     def start(self, *systems, **kwargs):
         """Initialize the scene. All systems must implement an 'onStart(scene, **kwargs)' method where this Scene instance will be passed as the first argument and the **kwargs of this method will also be passed on. The systems will be called in the same order they are supplied to this method."""
 
-        self._processBuffers()
         for system in systems:
             system.onStart(self, **kwargs)
-            self._processBuffers()
 
     def update(self, *systems, **kwargs):
         """Update the scene. All systems must implement an 'onUpdate(self, scene, **kwargs)' method where this Scene instance will be passed as the first argument and the **kwargs of this method will also be passed on. The systems will be called in the same order they are supplied to this method."""
 
-        self._processBuffers()
         for system in systems:
             system.onUpdate(self, **kwargs)
-            self._processBuffers()
 
     def stop(self, *systems, **kwargs):
         """Clean up the scene. All systems must implement an 'onStop(self, scene, **kwargs)' method where this Scene instance  will be passed as the first argument and the **kwargs of this method will also be passed on. The systems will be called in the same order they are supplied to this method."""
 
-        self._processBuffers()
         for system in systems:
             system.onStop(self, **kwargs)
-            self._processBuffers()
 
 
     def select(self, *comptypes, exclude=None):
