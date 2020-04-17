@@ -16,14 +16,14 @@ class Velocity():
         return f"<Velocity({self.vx}, {self.vy})>"
 
 class MovementSystem():
-    def update(self, scene, dt=1, **kwargs):
-        for eid, (pos, vel) in scene.filter(Position, Velocity):
+    def onUpdate(self, scene, dt=1, **kwargs):
+        for eid, (pos, vel) in scene.select(Position, Velocity):
             pos.x += vel.vx * dt
             pos.y += vel.vy * dt
 
 class ReportSystem():
-    def update(self, scene, dt=1, **kwargs):
-        for eid, (pos, vel) in scene.filter(Position, Velocity):
+    def onUpdate(self, scene, dt=1, **kwargs):
+        for eid, (pos, vel) in scene.select(Position, Velocity):
             print(eid, pos, vel)
         print()
 
