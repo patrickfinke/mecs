@@ -295,28 +295,28 @@ class Scene():
         return comp
 
 
-    def init(self, *systems, **kwargs):
-        """Initialize the scene. All systems must implement an 'init(self, scene, **kwargs)' method where this Scene instance will be passed as the first argument and the **kwargs of this method will also be passed on. The systems will be called in the same order they are supplied to this method."""
+    def start(self, *systems, **kwargs):
+        """Initialize the scene. All systems must implement an 'onStart(scene, **kwargs)' method where this Scene instance will be passed as the first argument and the **kwargs of this method will also be passed on. The systems will be called in the same order they are supplied to this method."""
 
         self._processBuffers()
         for system in systems:
-            system.init(self, **kwargs)
+            system.onStart(self, **kwargs)
             self._processBuffers()
 
     def update(self, *systems, **kwargs):
-        """Update the scene. All systems must implement an 'update(self, scene, **kwargs)' method where this Scene instance will be passed as the first argument and the **kwargs of this method will also be passed on. The systems will be called in the same order they are supplied to this method."""
+        """Update the scene. All systems must implement an 'onUpdate(self, scene, **kwargs)' method where this Scene instance will be passed as the first argument and the **kwargs of this method will also be passed on. The systems will be called in the same order they are supplied to this method."""
 
         self._processBuffers()
         for system in systems:
-            system.update(self, **kwargs)
+            system.onUpdate(self, **kwargs)
             self._processBuffers()
 
-    def destroy(self, *systems, **kwargs):
-        """Destroy the scene. All systems must implement an 'destroy(self, scene, **kwargs)' method where this Scene instance  will be passed as the first argument and the **kwargs of this method will also be passed on. The systems will be called in the same order they are supplied to this method."""
+    def stop(self, *systems, **kwargs):
+        """Clean up the scene. All systems must implement an 'onStop(self, scene, **kwargs)' method where this Scene instance  will be passed as the first argument and the **kwargs of this method will also be passed on. The systems will be called in the same order they are supplied to this method."""
 
         self._processBuffers()
         for system in systems:
-            system.destroy(self, **kwargs)
+            system.onStop(self, **kwargs)
             self._processBuffers()
 
 
