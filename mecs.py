@@ -293,26 +293,26 @@ class Scene():
 
 
     def start(self, *systems, **kwargs):
-        """Initialize the scene. All systems must implement an 'onStart(scene, **kwargs)' method where this Scene instance will be passed as the first argument and the **kwargs of this method will also be passed on. The systems will be called in the same order they are supplied to this method."""
+        """Initialize the scene. All systems must implement an 'onStart(scene, **kwargs)' method where this scene instance will be passed as the first argument and the **kwargs of this method will also be passed on. The systems will be called in the same order they are supplied to this method."""
 
         for system in systems:
             system.onStart(self, **kwargs)
 
     def update(self, *systems, **kwargs):
-        """Update the scene. All systems must implement an 'onUpdate(self, scene, **kwargs)' method where this Scene instance will be passed as the first argument and the **kwargs of this method will also be passed on. The systems will be called in the same order they are supplied to this method."""
+        """Update the scene. All systems must implement an 'onUpdate(self, scene, **kwargs)' method where this scene instance will be passed as the first argument and the **kwargs of this method will also be passed on. The systems will be called in the same order they are supplied to this method."""
 
         for system in systems:
             system.onUpdate(self, **kwargs)
 
     def stop(self, *systems, **kwargs):
-        """Clean up the scene. All systems must implement an 'onStop(self, scene, **kwargs)' method where this Scene instance  will be passed as the first argument and the **kwargs of this method will also be passed on. The systems will be called in the same order they are supplied to this method."""
+        """Clean up the scene. All systems must implement an 'onStop(self, scene, **kwargs)' method where this scene instance will be passed as the first argument and the **kwargs of this method will also be passed on. The systems will be called in the same order they are supplied to this method."""
 
         for system in systems:
             system.onStop(self, **kwargs)
 
 
     def select(self, *comptypes, exclude=None):
-        """Iterate over entity ids and their corresponding components. Yields tuples of the form (eid, (compA, compB, ...)) where compA, compB, ... are of the given component types and belong to the entity with entity id eid. If no component types are given, iterate over all entities. If exclude is not None, entities with component types listed in exclude will not be returned. Raises ValueError if exclude component types that are explicitly requested."""
+        """Iterate over entity ids and their corresponding components. Yields tuples of the form (eid, (compA, compB, ...)) where compA, compB, ... are of the given component types and belong to the entity with entity id eid. If no component types are given, iterate over all entities. If exclude is not None, entities with component types listed in exclude will not be returned. Raises ValueError if exclude contains component types that are also explicitly included."""
 
         if exclude and any(ct in exclude for ct in comptypes):
             raise ValueError()

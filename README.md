@@ -17,24 +17,26 @@ Inspired by [Esper](https://github.com/benmoran56/esper) and Sean Fisk's [ecs](h
 <a name="changelog"/>
 
 ## Changelog
+
 - **v1.0.0 - First release**
 
-  This is the first release of `mecs` where its base functionality is implemented and working. Note that at this stage it is not save to add or remove components while iterating over their entities. This will be fixed in a future release.
+  The base functionality is implemented. Note that at this stage it is not safe to add or remove components while iterating over their entities. This will be fixed in a future release.
 
 <a name="installation"/>
 
 ## Installation
+
 `mecs` is implemented in a single file with no dependencies. Simply copy `mecs.py` to your project folder and `import mecs`.
 
 <a name="ecs-paradigm"/>
 
 ## About the ECS paradigm
 
-The Entity Component System (ECS) paradigm consists of three different concepts, namely **entities**, **components** and **systems**. These should be understood as follows
+The Entity Component System (ECS) paradigm consists of three different concepts, namely **entities**, **components** and **systems**. These should be understood as follows:
 
 1. **Entities** are unique identifiers, labeling a set of components as belonging to a logical group.
-2. **Components** are plain data and have no logic associated to them. They define the behavior of entities.
-3. **Systems** are logic that operate on entities and their components. They change the behavior of entities by adding, removing and mutation their components.
+2. **Components** are plain data and implement no logic. They define the behavior of entities.
+3. **Systems** are logic that operates on entities and their components. They enforce the appropriate behavior of entities with certain component sets and are also able to change their behavior by adding, removing and mutating components.
 
 For more information about the ECS paradigm, visit the [Wikipedia article](https://en.wikipedia.org/wiki/Entity_component_system) or Sander Mertens' [ecs-faq](https://github.com/SanderMertens/ecs-faq).
 
@@ -60,7 +62,7 @@ eid = scene.new()
 
 ### Implementing and managing components
 
-Components can be instances of any class and `mecs` does not provide a base class for them. For example a `Position` component containing `x` and `y` coordinates could look like this
+Components can be instances of any class and `mecs` does not provide a base class for them. For example a `Position` component containing `x` and `y` coordinates could look like this:
 
 ```python
 class Position():
@@ -78,7 +80,7 @@ class Velocity():
 
 Note that while these have almost the same structure, replacing both by a more general `TwoValues` component would not be a good idea. `Position` and `Velocity` describe different properties of an object and thus should be kept explicitely separate.
 
-Components are distinguished by their **component type**. To get the type of a component use the build-in `type()`.
+Components are distinguished by their **component type**. To get the type of a component use the build-in `type()`:
 
 ```python
 position = Position(15, 8)
@@ -86,6 +88,8 @@ type(position)
 # => <class '__main__.Position'>
 ```
 
+\
+\
 The `Scene` class provides the following methods for interacting with entities and components. Note that the entity id used in these methods must be valid, i.e. must be returned from `scene.new()`. Using an invalid entity id results in a `KeyError`.
 
 #### 1. Add components using `scene.add(eid, comp)`.
@@ -139,7 +143,7 @@ scene.free(eid)
 # => [<__main__.Position object at 0x000001EF0358D370>, <__main__.Velocity object at 0x000001EF035B47C0>]
 ```
 
-Note that this does not make the entity id invalid. In fact, there is no way to invalidate a once valid id. In particular, there is no method to check if an entity is still 'alive'. If you need such behaviour consider attaching an `Alive` component (that has no further data) to every entity that needs it and use `scene.has(eid, Alive)` to determine if the entity is alive.
+Note that this does not make the entity id invalid. In fact, there is no way to invalidate a once valid id. In particular, there is no method to check if an entity is still 'alive'. If you need such behavior, consider attaching an `Alive` component (that has no further data) to every entity that needs it and use `scene.has(eid, Alive)` to determine if the entity is alive.
 
 #### 6. Viewing the archetype of an entity and all of its components using `scene.archetype(eid)` and `scene.components(eid)`.
 
@@ -156,79 +160,94 @@ scene.components(eid)
 
 The result of `scene.archetype(eid)` is sorted, so comparisons of the form `scene.archetype(eid1) == scene.archetype(eid2)` are safe, but hardly necessary.
 
-#### 7. Iterating over entities and components using `scene.filter(*comptypes, exclude=None)`.
+#### 7. Iterating over entities and components using `scene.select(*comptypes, exclude=None)`.
 
 The result of this method is a generator object yielding tuples of the form `(eid, (compA, compB, ...))` where `compA`, `compB` belong to the entity with entity id `eid` and have the requested types. Optionally, an iterable (such as a list or tuple) may be passed to the `exclude` argument, in which case all entities having one or more component types listed in `exclude` will not be yielded by the method.
 
 ```python
 # adjust position based on velocity
 dt = current_deltatime()
-for eid, (pos, vel) in scene.filter(Position, Velocity):
+for eid, (pos, vel) in scene.select(Position, Velocity):
   pos.x += vel.vx * dt
   pos.y += vel.vy * dt
 
 # play sounds, remove them if they ended
-for eid, (sound,) in scene.filter(Sound):
+for eid, (sound,) in scene.select(Sound):
   if not sound.isPlaying():
     sound.play()
   else if sound.hasEnded():
     scene.remove(eid, Sound)
 ```
 
-Iterating over entities that have a certain set of components is one of the most important tasks in the ECS paradigm. Usually, this is done by systems to efficiently apply their logic to the appropriate entities. For more examples, visit the section about systems.
+Iterating over entities that have a certain set of components is one of the most important tasks in the ECS paradigm. Usually, this is done by systems to efficiently apply their logic to the appropriate entities. For more examples, see the section about systems.
 
 <a name="mecs-systems"/>
 
 ### Implementing and running systems
 
-As with components, `mecs` does not provide a base class for systems. The `Scene` class has three methods to inject your systems logic.
+As with components, `mecs` does not provide a base class for systems. Instead, a system should implement any of the three callback methods (`onStart()`, `onUpdate()`, and `onStop()`) and must be passed to the corresponding method of the `Scene` class.
 
-#### 1. Initialization with `scene.init(*systems, **kwargs)`.
+#### 1. Initializing a scene using `scene.start(*systems, **kwargs)`.
 
-Any instance of any class that implements a method with the signature `init(scene, **kwargs)` may be passed as a valid system. The scene instance will pass itself on via the `scene` argument as well as any `kwargs`. All systems will be called in the order they are passed to this method.
+Any instance of any class that implements a method with the signature `onStart(scene, **kwargs)` may be used as an input to this method.
+
+The scene iterates through all systems in the order they are passed and calls their respective `onStart()` methods, passing itself using the `scene` argument. Additionally, any `kwargs` will also be passed on.
 
 ```python
 class RenderSystem():
-  def init(self, scene, resolution=(600, 480), **kwargs):
-    init_graphics_devices(resolution)
+  def onStart(self, scene, resolution=(600, 480), **kwargs):
+    self.graphics = init_graphics_devices(resolution)
+    self.textures = load_textures("./resources/textures")
 
 renderSystem = RenderSystem()
-initsystems = [renderSystem, AnotherInitSystem()]
-scene.init(*initsystems, resolution=(1280, 720))
+startSystems = [renderSystem, AnotherInitSystem()]
+scene.start(*startSystems, resolution=(1280, 720))
 ```
 
-#### 2.  Update with `scene.update(*systems, **kwargs)`.
+This method should *not* be called multiple times. Instead, all necessary systems should be instantiated first, followed by a single call to `scene.start()`.
 
-Any instance of any class that implements a method with the signature `update(scene, **kwargs)` may be passed as a valid system. The scene instance will pass itself on via the `scene` argument as well as any `kwargs`. All systems will be called in the order they are passed to this method.
+#### 2. Updating a scene using `scene.update(*systems, **kwargs)`.
+
+Any instance of any class that implements a method with the signature `onUpdate(scene, **kwargs)` may be used as an input to this method.
+
+The scene iterates through all systems in the order they are passed and calls their respective `onUpdate()` methods, passing itself using the `scene` argument. Additionally, any `kwargs` will also be passed on.
 
 ```python
 class RenderSystem():
-  def update(self, scene, **kwargs):
-    for eid, (pos, rend) in scene.filter(Position, Renderable):
-      render_at_position(pos.x, pos.y, rend.texture)
+  def onUpdate(self, scene, **kwargs):
+    for eid, (pos, rend) in scene.select(Position, Renderable):
+      texture = self.textures[rend.textureId]
+      self.graphics.render(pos.x, pos.y, texture))
 
 class MovementSystem():
-  def update(self, scene, dt=1, **kwargs):
-    for eid, (pos, vel) in scene.filter(Position, Velocity):
+  def onUpdate(self, scene, dt=1, **kwargs):
+    for eid, (pos, vel) in scene.select(Position, Velocity):
       pos.x += vel.vx * dt
       pos.y += vel.vy * dt
 
-updatesystems = [renderSystem, MovementSystem()]
-scene.update(*updatesystems, dt=current_deltatime())
+updateSystems = [MovementSystem(), renderSystem]
+scene.update(*updateSystems, dt=current_deltatime())
 ```
 
-#### 3. Destroy with `scene.destroy(*systems, **kwargs)`.
+To avoid any unnecessary overhead, call this method only once per update circle, passing all necessary systems as arguments.
 
-Any instance of any class that implements a method with the signature `destroy(scene, **kwargs)` may be passed as a valid system. The scene instance will pass itself on via the `scene` argument as well as any `kwargs`. All systems will be called in the order they are passed to this method.
+#### 3. Cleaning up a scene using `scene.stop(*systems, **kwargs)`.
+
+Any instance of any class that implements a method with the signature `onStop(scene, **kwargs)` may be used as an input to this method.
+
+The scene iterates through all systems in the order they are passed and calls their respective `onStop()` methods, passing itself using the `scene` argument. Additionally, any `kwargs` will also be passed on.
 
 ```python
 class RenderSystem():
-  def destroy(self, scene, **kwargs):
-    stop_graphics_devices()
+  def onStop(self, scene, **kwargs):
+    stop_graphics_devices(self.graphics)
+    unload_textures(self.textures)
 
-destroysystems = [renderSystem, AnotherDestroySystem()]
-scene.destroy(*destroysystems)
+stopSystems = [renderSystem, AnotherDestroySystem()]
+scene.stop(*stopSystems)
 ```
+
+As with `scene.start()` this method should *not* be called multiple times, but instead once with all the necessary systems.
 
 <a name="mecs-loop"/>
 
@@ -240,19 +259,19 @@ When trying to write the main loop of your program you may use this pattern.
 # Your system instances go here. Be sure to use the same instances
 # in different lists if one of your systems implements more than one
 # of the init, update or destroy methods.
-initsystems = []
-updatesystems = []
-destroysystems = []
+startSystems = []
+updateSystems = []
+stopSystems = []
 
 print("[Press Ctrl+C to stop]")
 try:
   scene = Scene()
-  scene.init(*initsystems)
+  scene.start(*startSystems)
   while True:
     deltaTime = current_deltatime()
-    scene.update(*updatesystems, dt=deltaTime)
+    scene.update(*updateSystems, dt=deltaTime)
 except KeyboardInterrupt:
   pass
 finally:
-  scene.destroy(*destroysystems)
+  scene.stop(*stopSystems)
 ```
