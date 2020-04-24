@@ -7,15 +7,79 @@ class Scene():
         self.entitymap = {} # {eid: (archetype, index)}
         self.archetypemap = {} # {component type: set(archetype)}
         self.chunkmap = {} # {archetype: ([eid], {component type: [component]})}
+        self.lasteid = -1 # the last valid entity id
 
-        self.lasteid = -1
+    def _getArchetype(self, comptypelist):
+        """Internal method to get the unique (in memory) archetype tuple that corresponds to the passed list of component types. No component type must appear more than once."""
 
-    def _getNewArchetype(self, archetype):
-        newarchetype = tuple(sorted(archetype, key = lambda ct: id(ct)))
+        newarchetype = tuple(sorted(comptypelist, key = lambda ct: id(ct)))
         if newarchetype not in self.chunkmap:
             return newarchetype
         return next(iter(x for x in self.chunkmap if x == newarchetype)) # find in cache
 
+    def _unpackEntity(self, eid):
+        """Internal method to unpack the data of an entity. The entity id must be valid and in entitymap, i.e. the entity must have at least one component."""
+
+        archetype, index = self.entitymap[eid]
+        eidlist, comptypemap = self.chunkmap[archetype]
+
+        return archetype, index, eidlist, comptypemap
+
+    def _removeEntity(self, eid):
+        """Internal method to remove an entity. The entity id must be valid and in entitymap, i.e. the entity must have at least one component."""
+
+        archetype, index, eidlist, comptypemap = self._unpackEntity(eid)
+
+        # remove the entity by swapping it with another entity, or ...
+        if len(eidlist) > 1:
+            swapid = eidlist[-1]
+            if swapid != eid: # do not replace with self
+                self.entitymap[swapid] = (archetype, index)
+
+                eidlist[index] = swapid
+                for complist in comptypemap.values():
+                    swapcomp = complist[-1]
+                    complist[index] = swapcomp
+
+            # remove swaped entity
+            eidlist.pop()
+            for complist in comptypemap.values():
+                complist.pop()
+        else: # ... if the archetype container will be empty after this, remove it
+            for ct in archetype:
+                self.archetypemap[ct].remove(archetype)
+                if not self.archetypemap[ct]:
+                    del self.archetypemap[ct]
+            del self.chunkmap[archetype]
+
+        del self.entitymap[eid]
+
+    def _addEntity(self, eid, complist):
+        """Internal method to add an entity. The entity id must be valid and the component list must be non-empty. Also, there must be a maximum of one component of each type."""
+
+        # calculate new archetype
+        archetype = self._getArchetype((type(comp) for comp in complist))
+
+        # if there is no container for the new archetype, create one
+        if archetype not in self.chunkmap:
+            # add to chunkmap
+            self.chunkmap[archetype] = ([], {ct: [] for ct in archetype})
+
+            # add to archetypemap
+            for ct in archetype:
+                if ct not in self.archetypemap:
+                    self.archetypemap[ct] = set()
+                self.archetypemap[ct].add(archetype)
+
+        # add the entity and components to the archetype container
+        eidlist, comptypemap = self.chunkmap[archetype]
+        eidlist.append(eid)
+        for c in complist:
+            comptypemap[type(c)].append(c)
+
+        # make reference to entity in entitymap
+        index = len(eidlist) - 1
+        self.entitymap[eid] = (archetype, index)
 
     def new(self):
         """Returns a valid and previously unused entity id."""
@@ -30,43 +94,10 @@ class Scene():
         if eid > self.lasteid:
             raise KeyError()
 
-        # entity has no components
-        if eid not in self.entitymap:
-            return []
+        components = list(self.components(eid))
 
-        archetype, index = self.entitymap[eid]
-        chunk = self.chunkmap[archetype]
-        eidlist, comptypemap = chunk
-
-        # save components and return them later
-        components = [comptypemap[comptype][index] for comptype in archetype]
-
-        # prepare replacement entity
-        if len(eidlist) > 1:
-            swapid = eidlist[-1]
-            if swapid != eid: # do not replace with self
-                self.entitymap[swapid] = (archetype, index)
-
-                # replace in eid list
-                eidlist[index] = swapid
-
-                # replace in every component list
-                for complist in comptypemap.values():
-                    swapcomp = complist[-1]
-                    complist[index] = swapcomp
-
-            eidlist.pop()
-            for complist in comptypemap.values():
-                complist.pop()
-        else: # remove archetype
-            for ct in archetype:
-                self.archetypemap[ct].remove(archetype)
-                if not self.archetypemap[ct]:
-                    del self.archetypemap[ct]
-            del self.chunkmap[archetype]
-
-        # remove from entitymap
-        del self.entitymap[eid]
+        if components:
+            self._removeEntity(eid)
 
         return components
 
@@ -82,10 +113,9 @@ class Scene():
         if eid not in self.entitymap:
             return ()
 
-        archetype, index = self.entitymap[eid]
-        chunk = self.chunkmap[archetype]
-        _, comptypemap = chunk
-        return tuple(comptypemap[comptype][index] for comptype in archetype)
+        _, index, _, comptypemap = self._unpackEntity(eid)
+
+        return tuple(comptypemap[comptype][index] for comptype in comptypemap)
 
 
     def archetype(self, eid):
@@ -99,85 +129,28 @@ class Scene():
         if eid not in self.entitymap:
             return ()
 
-        archetype, _ = self.entitymap[eid]
+        archetype, _, _, _ = self._unpackEntity(eid)
+
         return archetype
 
 
     def add(self, eid, comp):
         """Add a component to an entity. Returns the component. Raises KeyError if the entity id is not valid or ValueError if the entity already has a component of the same type."""
 
-        comptype = type(comp)
-
         # invalid entity id
         if eid > self.lasteid:
             raise KeyError()
 
-        # remove from old archetype
+        if self.has(eid, type(comp)):
+            raise ValueError()
+
+        complist = list(self.components(eid))
+        complist.append(comp)
+
         if eid in self.entitymap:
-            archetype, index = self.entitymap[eid]
-            if comptype in archetype: # already has component of that type
-                raise ValueError()
+            self._removeEntity(eid)
 
-            chunk = self.chunkmap[archetype]
-            eidlist, comptypemap = chunk
-
-            # save components
-            components = {ct: comptypemap[ct][index] for ct in archetype}
-
-            # prepare replacement entity
-            if len(eidlist) > 1:
-                swapid = eidlist[-1]
-                if swapid != eid: # do not replace with self
-                    self.entitymap[swapid] = (archetype, index)
-
-                    # replace in eid list
-                    eidlist[index] = swapid
-
-                    # replace in every component list
-                    for complist in comptypemap.values():
-                        swapcomp = complist[-1]
-                        complist[index] = swapcomp
-
-                eidlist.pop()
-                for complist in comptypemap.values():
-                    complist.pop()
-            else: # remove archetype
-                for ct in archetype:
-                    self.archetypemap[ct].remove(archetype)
-                    if not self.archetypemap[ct]:
-                        del self.archetypemap[ct]
-                del self.chunkmap[archetype]
-        else:
-            archetype, index = (), 0
-            components = {}
-            self.entitymap[eid] = (archetype, index)
-
-        # calculate new archetype
-        newarchetype = self._getNewArchetype(archetype + (comptype,))
-
-        # get new chunk
-        if newarchetype not in self.chunkmap:
-            self.chunkmap[newarchetype] = ([], {ct: [] for ct in newarchetype})
-
-            # add new archetype to archetypemap
-            for ct in newarchetype:
-                if ct not in self.archetypemap:
-                    self.archetypemap[ct] = set()
-                self.archetypemap[ct].add(newarchetype)
-        newchunk = self.chunkmap[newarchetype]
-        neweidlist, newcomptypemap = newchunk
-
-        # add eid to chunk
-        neweidlist.append(eid)
-
-        # add old and new components to chunk
-        components[comptype] = comp # add new component
-        for ct, c in components.items():
-            newcomptypemap[ct].append(c)
-
-        # calculate new index and adjust entry in entitymap
-        newindex = len(neweidlist) - 1
-        self.entitymap[eid] = (newarchetype, newindex)
+        self._addEntity(eid, complist)
 
         return comp
 
@@ -192,8 +165,9 @@ class Scene():
         if eid not in self.entitymap:
             return False
 
-        archetype, _ = self.entitymap[eid]
-        return comptype in archetype
+        _, _, _, comptypemap = self._unpackEntity(eid)
+
+        return comptype in comptypemap
 
     def get(self, eid, comptype):
         """Get a component from an entity. Returns the component. Raises KeyError if the entity id is not valid or ValueError if the entity has no component of the given type."""
@@ -202,19 +176,12 @@ class Scene():
         if eid > self.lasteid:
             raise KeyError()
 
-        # entity has no components
-        if eid not in self.entitymap:
+        if not self.has(eid, comptype):
             raise ValueError()
 
-        # component type not part of archetype
-        archetype, index = self.entitymap[eid]
-        if comptype not in archetype:
-            raise ValueError()
+        _, index, _, comptypemap = self._unpackEntity(eid)
 
-        chunk = self.chunkmap[archetype]
-        _, comptypemap = chunk
-        complist = comptypemap[comptype]
-        return complist[index]
+        return comptypemap[comptype][index]
 
     def remove(self, eid, comptype):
         """Remove a component from an entity. Returns the component. Raises KeyError if the entity id is not valid or ValueError if the entity has no component of the given type."""
@@ -223,71 +190,17 @@ class Scene():
         if eid > self.lasteid:
             raise KeyError()
 
-        # entity has no components
-        if eid not in self.entitymap:
+        if not self.has(eid, comptype):
             raise ValueError()
 
-        archetype, index = self.entitymap[eid]
-        if comptype not in archetype: # entity has no component of that type
-            raise ValueError()
+        comp = self.get(eid, comptype)
+        complist = list(self.components(eid))
+        complist.remove(comp)
 
-        chunk = self.chunkmap[archetype]
-        eidlist, comptypemap = chunk
+        self._removeEntity(eid)
 
-        # save components
-        components = {ct: comptypemap[ct][index] for ct in archetype}
-
-        # prepare replacement entity
-        if len(eidlist) > 1:
-            swapid = eidlist[-1]
-            if swapid != eid: # do not replace with self
-                self.entitymap[swapid] = (archetype, index)
-
-                # replace in eid list
-                eidlist[index] = swapid
-
-                # replace in every component list
-                for complist in comptypemap.values():
-                    swapcomp = complist[-1]
-                    complist[index] = swapcomp
-
-            eidlist.pop()
-            for complist in comptypemap.values():
-                complist.pop()
-        else: # remove archetype
-            for ct in archetype:
-                self.archetypemap[ct].remove(archetype)
-                if not self.archetypemap[ct]:
-                    del self.archetypemap[ct]
-            del self.chunkmap[archetype]
-
-        # calculate new archetype
-        newarchetype = self._getNewArchetype((ct for ct in archetype if ct is not comptype))
-
-        # get new chunk
-        if newarchetype not in self.chunkmap:
-            self.chunkmap[newarchetype] = ([], {ct: [] for ct in newarchetype})
-
-            # add new archetype to archetypemap
-            for ct in newarchetype:
-                if ct not in self.archetypemap:
-                    self.archetypemap[ct] = set()
-                self.archetypemap[ct].add(newarchetype)
-        newchunk = self.chunkmap[newarchetype]
-        neweidlist, newcomptypemap = newchunk
-
-        # add eid to chunk
-        neweidlist.append(eid)
-
-        # add old components to chunk except the one to be removed
-        comp = components[comptype] # remember component
-        del components[comptype] # remove component
-        for ct, c in components.items():
-            newcomptypemap[ct].append(c)
-
-        # calculate new index and adjust entry in entitymap
-        newindex = len(neweidlist) - 1
-        self.entitymap[eid] = (newarchetype, newindex)
+        if complist:
+            self._addEntity(eid, complist)
 
         return comp
 
@@ -322,8 +235,7 @@ class Scene():
 
         archetypes = incarchetypes - excarchetypes
         for archetype in archetypes:
-            chunk = self.chunkmap[archetype]
-            eidlist, comptypemap = chunk
+            eidlist, comptypemap = self.chunkmap[archetype]
             if comptypes:
                 complists = [comptypemap[ct] for ct in comptypes]
                 for eid, comps in zip(eidlist, zip(*complists)):
