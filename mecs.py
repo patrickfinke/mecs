@@ -2,6 +2,36 @@
 
 __version__ = '1.0.0'
 
+class CommandBuffer():
+    """A buffer that stores commands and plays them back later."""
+    def __init__(self, scene):
+        self.scene = scene
+        self.commands = []
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.flush()
+
+    def add(self, eid, comp):
+        """Add a component to an entity. The component will not be added immediately, but when the buffer is flushed. In particular, exceptions do not occur when calling this method, but only when the buffer is flushed."""
+        self.commands.append((self.scene.add, (eid, comp)))
+
+    def remove(self, eid, comptype):
+        """Remove a component from an entity. The component will not be removed immediately, but when the buffer is flushed. In particular, exceptions do not occur when calling this method, but only when the buffer is flushed."""
+        self.commands.append((self.scene.remove, (eid, comptype)))
+
+    def free(self, eid):
+        """Remove all components of an entity. The components will not be removed immediately, but when the buffer if flushed. In particular, exceptions do not occur when calling this method, but only when the buffer is flushed."""
+        self.commands.append((self.scene.free, (eid,)))
+
+    def flush(self):
+        """Flush the buffer. This will apply all commands that have been previously added to the buffer. If any arguments in these commands are faulty, exceptions may arrise."""
+        for cmd, args in self.commands:
+            cmd(*args)
+        self.commands.clear()
+
 class Scene():
     def __init__(self):
         self.entitymap = {} # {eid: (archetype, index)}
@@ -80,6 +110,11 @@ class Scene():
         # make reference to entity in entitymap
         index = len(eidlist) - 1
         self.entitymap[eid] = (archetype, index)
+
+    def buffer(self):
+        """Return a new command buffer for this scene."""
+
+        return CommandBuffer(self)
 
     def new(self):
         """Returns a valid and previously unused entity id."""
