@@ -18,6 +18,10 @@ Inspired by [Esper](https://github.com/benmoran56/esper) and Sean Fisk's [ecs](h
 
 ## Changelog
 
+- **v1.1.0 - Add command buffer**
+
+  When using `scene.select()`, manipulation of entities can now be recorded using the `CommandBuffer` instance returned by `scene.buffer()`, and played back at a later time. This avoids unexpected behavior that would occur when using the scene instance directly.
+
 - **v1.0.0 - First release**
 
   The base functionality is implemented. Note that at this stage it is not safe to add or remove components while iterating over their entities. This will be fixed in a future release.
@@ -164,6 +168,8 @@ The result of `scene.archetype(eid)` is sorted, so comparisons of the form `scen
 
 The result of this method is a generator object yielding tuples of the form `(eid, (compA, compB, ...))` where `compA`, `compB` belong to the entity with entity id `eid` and have the requested types. Optionally, an iterable (such as a list or tuple) may be passed to the `exclude` argument, in which case all entities having one or more component types listed in `exclude` will not be yielded by the method.
 
+It is *very important* to note, that between the creation and exhaustion of the generator it is *not* save to use the `scene.add()`, `scene.remove()`, and `scene.free()` methods, as these will alter the structure of the underlying database. Using these methods while iterating over the generator does not raise any exceptions, but will often lead to unexpected behavior! To resolve this issue, `mecs` provides the `CommandBuffer` class, which implements `CommandBuffer.add(eid, comp)`, `CommandBuffer.remove(eid, comptype)`, and `CommandBuffer.free(eid)`. The command buffer will record any calls to these methods, and when it is save to do so, the recordings can be played back to the scene by calling `CommandBuffer.flush()`. Alternatively, the command buffer can be used as a context manager, which is strongly recommended. To get a new `CommandBuffer` instance associated to the scene use `scene.buffer()`.
+
 ```python
 # adjust position based on velocity
 dt = current_deltatime()
@@ -172,11 +178,12 @@ for eid, (pos, vel) in scene.select(Position, Velocity):
   pos.y += vel.vy * dt
 
 # play sounds, remove them if they ended
-for eid, (sound,) in scene.select(Sound):
-  if not sound.isPlaying():
-    sound.play()
-  else if sound.hasEnded():
-    scene.remove(eid, Sound)
+with scene.buffer() as buffer:
+  for eid, (sound,) in scene.select(Sound):
+    if not sound.isPlaying():
+      sound.play()
+    elif sound.hasEnded():
+      buffer.remove(eid, Sound)
 ```
 
 Iterating over entities that have a certain set of components is one of the most important tasks in the ECS paradigm. Usually, this is done by systems to efficiently apply their logic to the appropriate entities. For more examples, see the section about systems.
