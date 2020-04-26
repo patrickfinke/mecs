@@ -1,6 +1,6 @@
 """An implementation of the Entity Component System (ECS) paradigm."""
 
-__version__ = '1.0.0'
+__version__ = '1.1.0'
 
 class CommandBuffer():
     """A buffer that stores commands and plays them back later."""
