@@ -127,7 +127,7 @@ class Scene():
 
         # invalid entity id
         if eid > self.lasteid:
-            raise KeyError()
+            raise KeyError(f"invalid entity id: {eid}")
 
         components = list(self.components(eid))
 
@@ -142,7 +142,7 @@ class Scene():
 
         # invalid entity id
         if eid > self.lasteid:
-            raise KeyError()
+            raise KeyError(f"invalid entity id: {eid}")
 
         # entity has no components
         if eid not in self.entitymap:
@@ -158,7 +158,7 @@ class Scene():
 
         # invalid entity id
         if eid > self.lasteid:
-            raise KeyError()
+            raise KeyError(f"invalid entity id: {eid}")
 
         # entity has no components
         if eid not in self.entitymap:
@@ -174,10 +174,10 @@ class Scene():
 
         # invalid entity id
         if eid > self.lasteid:
-            raise KeyError()
+            raise KeyError(f"invalid entity id: {eid}")
 
         if self.has(eid, type(comp)):
-            raise ValueError()
+            raise ValueError(f"component type already present: {type(comp)}")
 
         complist = list(self.components(eid))
         complist.append(comp)
@@ -194,7 +194,7 @@ class Scene():
 
         # invalid entity id
         if eid > self.lasteid:
-            raise KeyError()
+            raise KeyError(f"invalid entity id: {eid}")
 
         # entity has no components
         if eid not in self.entitymap:
@@ -209,10 +209,10 @@ class Scene():
 
         # invalid entity id
         if eid > self.lasteid:
-            raise KeyError()
+            raise KeyError(f"invalid entity id: {eid}")
 
         if not self.has(eid, comptype):
-            raise ValueError()
+            raise ValueError(f"missing component type: {comptype}")
 
         _, index, _, comptypemap = self._unpackEntity(eid)
 
@@ -223,10 +223,10 @@ class Scene():
 
         # invalid entity id
         if eid > self.lasteid:
-            raise KeyError()
+            raise KeyError(f"invalid entity id: {eid}")
 
         if not self.has(eid, comptype):
-            raise ValueError()
+            raise ValueError(f"missing component type: {comptype}")
 
         comp = self.get(eid, comptype)
         complist = list(self.components(eid))
@@ -263,7 +263,7 @@ class Scene():
         """Iterate over entity ids and their corresponding components. Yields tuples of the form (eid, (compA, compB, ...)) where compA, compB, ... are of the given component types and belong to the entity with entity id eid. If no component types are given, iterate over all entities. If exclude is not None, entities with component types listed in exclude will not be returned. Raises ValueError if exclude contains component types that are also explicitly included."""
 
         if exclude and any(ct in exclude for ct in comptypes):
-            raise ValueError()
+            raise ValueError(f"excluding explicitely included component types: {', '.join(str(x) for x in set(comptypes).intersection(exclude))}")
 
         incarchetypes = set.intersection(*[self.archetypemap.get(ct, set()) for ct in comptypes]) if comptypes else set(self.chunkmap.keys())
         excarchetypes = set.union(*[self.archetypemap.get(ct, set()) for ct in exclude]) if exclude else set()
