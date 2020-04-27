@@ -18,6 +18,8 @@ Inspired by [Esper](https://github.com/benmoran56/esper) and Sean Fisk's [ecs](h
 
 ## Changelog
 
+For a full list of changes see [CHANGELOG.md](CHANGELOG.md).
+
 - **v1.1.0 - Add command buffer**
 
   When using `scene.select()`, manipulation of entities can now be recorded using the `CommandBuffer` instance returned by `scene.buffer()`, and played back at a later time. This avoids unexpected behavior that would occur when using the scene instance directly.
