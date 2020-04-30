@@ -4,8 +4,9 @@ All notable changes to this project will be documented in this file. This projec
 
 - **unreleased**
 
-  - Add support for multiple components/component types to `scene.add()`, `scene.has()`, `scene.get()`, and `scene.remove()`. This does now only lead to shorter and more readable code, but can also improve performance.
+  - Add support for multiple components/component types to `scene.add()`, `scene.has()`, `scene.get()`, and `scene.remove()`. This does not only lead to shorter and more readable code, but can also improve performance.
   - Add informative messages to exceptions.
+  - Refactor for minor performance increase.
   - Fix a typo in `test.py`.
 
 - **v1.1.0 - Add command buffer**
