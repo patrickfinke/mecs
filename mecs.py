@@ -129,10 +129,14 @@ class Scene():
         if eid > self.lasteid:
             raise KeyError(f"invalid entity id: {eid}")
 
-        components = list(self.components(eid))
+        if eid not in self.entitymap:
+            return []
 
-        if components:
-            self._removeEntity(eid)
+        _, index, _, comptypemap = self._unpackEntity(eid)
+
+        components = [comptypemap[comptype][index] for comptype in comptypemap]
+
+        self._removeEntity(eid)
 
         return components
 
@@ -184,7 +188,7 @@ class Scene():
                 raise ValueError(f"component type(s) already present: {str(type(comp)) for comp in comps if type(comp) in comptypemap}")
 
             complist.extend(comptypemap[comptype][index] for comptype in comptypemap)
-            
+
             self._removeEntity(eid)
 
         complist.extend(comps)
