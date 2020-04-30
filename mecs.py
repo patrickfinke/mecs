@@ -176,18 +176,18 @@ class Scene():
         if eid > self.lasteid:
             raise KeyError(f"invalid entity id: {eid}")
 
-        if any(self.has(eid, type(comp)) for comp in comps):
-            if eid in self.entitymap:
-                archetype, _, _, _ = self._unpackEntity(eid)
-            else:
-                archetype = ()
-            raise ValueError(f"component type(s) already present: {str(type(comp)) for comp in comps if type(comp) in archetype}")
-
-        complist = self.components(eid) + comps
-
+        complist = []
         if eid in self.entitymap:
+            archetype, index, eidlist, comptypemap = self._unpackEntity(eid)
+
+            if any(type(comp) in comptypemap for comp in comps):
+                raise ValueError(f"component type(s) already present: {str(type(comp)) for comp in comps if type(comp) in comptypemap}")
+
+            complist.extend(comptypemap[comptype][index] for comptype in comptypemap)
+            
             self._removeEntity(eid)
 
+        complist.extend(comps)
         self._addEntity(eid, complist)
 
         if len(comps) == 1:
