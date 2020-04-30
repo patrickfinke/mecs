@@ -14,13 +14,13 @@ class CommandBuffer():
     def __exit__(self, type, value, traceback):
         self.flush()
 
-    def add(self, eid, comp):
+    def add(self, eid, *comps):
         """Add a component to an entity. The component will not be added immediately, but when the buffer is flushed. In particular, exceptions do not occur when calling this method, but only when the buffer is flushed."""
-        self.commands.append((self.scene.add, (eid, comp)))
+        self.commands.append((self.scene.add, (eid, *comps)))
 
-    def remove(self, eid, comptype):
+    def remove(self, eid, *comptypes):
         """Remove a component from an entity. The component will not be removed immediately, but when the buffer is flushed. In particular, exceptions do not occur when calling this method, but only when the buffer is flushed."""
-        self.commands.append((self.scene.remove, (eid, comptype)))
+        self.commands.append((self.scene.remove, (eid, *comptypes)))
 
     def free(self, eid):
         """Remove all components of an entity. The components will not be removed immediately, but when the buffer if flushed. In particular, exceptions do not occur when calling this method, but only when the buffer is flushed."""
