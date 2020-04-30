@@ -174,11 +174,14 @@ class Scene():
 
 
     def add(self, eid, *comps):
-        """Add components to an entity. Returns the component(s) as a list if two or more components are given, or a single component instance if only one component is given. Raises KeyError if the entity id is not valid or ValueError if the entity would have one or more components of the same type after this operation."""
+        """Add components to an entity. Returns the component(s) as a list if two or more components are given, or a single component instance if only one component is given. Raises KeyError if the entity id is not valid or ValueError if the entity would have one or more components of the same type after this operation or no components are supplied to the method."""
 
         # invalid entity id
         if eid > self.lasteid:
             raise KeyError(f"invalid entity id: {eid}")
+
+        if not comps:
+            raise ValueError("missing input")
 
         complist = []
         if eid in self.entitymap:
@@ -205,11 +208,14 @@ class Scene():
             return list(comps)
 
     def has(self, eid, *comptypes):
-        """Return True if the entity has a component of each of the given types, False otherwise. Raises KeyError if the entity id is not valid."""
+        """Return True if the entity has a component of each of the given types, False otherwise. Raises KeyError if the entity id is not valid or ValueError if no component type is supplied to the method."""
 
         # invalid entity id
         if eid > self.lasteid:
             raise KeyError(f"invalid entity id: {eid}")
+
+        if not comptypes:
+            raise ValueError("missing input")
 
         # entity has no components
         if eid not in self.entitymap:
@@ -220,11 +226,14 @@ class Scene():
         return all(ct in comptypemap for ct in comptypes)
 
     def get(self, eid, *comptypes):
-        """Get components from an entity. Returns a list of the components if two or more component types are given, or a single component instance if only one component type is given. Raises KeyError if the entity id is not valid or ValueError if a component of any of the given types is missing."""
+        """Get components from an entity. Returns a list of the components if two or more component types are given, or a single component instance if only one component type is given. Raises KeyError if the entity id is not valid or ValueError if a component of any of the given types is missing or if no component types are supplied to the method."""
 
         # invalid entity id
         if eid > self.lasteid:
             raise KeyError(f"invalid entity id: {eid}")
+
+        if not comptypes:
+            raise ValueError("missing input")
 
         if eid not in self.entitymap:
             raise ValueError(f"missing component type(s): {', '.join(str(ct) for ct in comptypes)}")
@@ -240,11 +249,14 @@ class Scene():
             return [comptypemap[ct][index] for ct in comptypes]
 
     def remove(self, eid, *comptypes):
-        """Remove components from an entity. Returns a list of the components if two or more component types are given, or a single component instance if only one component type is given. Raises KeyError if the entity id is not valid or ValueError if the entity does not have a component of any of the given types."""
+        """Remove components from an entity. Returns a list of the components if two or more component types are given, or a single component instance if only one component type is given. Raises KeyError if the entity id is not valid or ValueError if the entity does not have a component of any of the given types or if no component types are supplied to the method."""
 
         # invalid entity id
         if eid > self.lasteid:
             raise KeyError(f"invalid entity id: {eid}")
+
+        if not comptypes:
+            raise ValueError("missing input")
 
         if eid not in self.entitymap:
             raise ValueError(f"missing component type(s): {', '.join(str(ct) for ct in comptypes)}")

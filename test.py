@@ -243,6 +243,7 @@ class SceneTestCase(unittest.TestCase):
         self.assertRaises(ValueError, self.scene.add, self.eid, self.componentB1, self.componentB2)
         self.assertRaises(ValueError, self.scene.add, self.eid, self.componentB2, self.componentB1)
         self.assertRaises(ValueError, self.scene.add, self.eid, self.componentB1, self.componentB1)
+        self.assertRaises(ValueError, self.scene.add, self.eid)
 
     def test_has_A(self):
         # case has no components
@@ -273,6 +274,13 @@ class SceneTestCase(unittest.TestCase):
     def test_has_XA(self):
         # KeyError
         self.assertRaises(KeyError, self.scene.has, self.invalideid, ComponentA)
+
+    def test_has_XB(self):
+        # ValueError
+        self.assertRaises(ValueError, self.scene.has, self.eid)
+
+        self.scene.add(self.eid, self.componentA)
+        self.assertRaises(ValueError, self.scene.has, self.eid)
 
     def test_get_A(self):
         # case one component
@@ -306,6 +314,7 @@ class SceneTestCase(unittest.TestCase):
         self.assertRaises(ValueError, self.scene.get, self.eid, ComponentB)
         self.assertRaises(ValueError, self.scene.get, self.eid, ComponentA, ComponentB)
         self.assertRaises(ValueError, self.scene.get, self.eid, ComponentB, ComponentA)
+        self.assertRaises(ValueError, self.scene.get, self.eid)
 
     def test_get_XC(self):
         # ValueError, case has components
@@ -315,6 +324,7 @@ class SceneTestCase(unittest.TestCase):
         self.assertRaises(ValueError, self.scene.get, self.eid, ComponentA)
         self.assertRaises(ValueError, self.scene.get, self.eid, ComponentA, ComponentB)
         self.assertRaises(ValueError, self.scene.get, self.eid, ComponentB, ComponentA)
+        self.assertRaises(ValueError, self.scene.get, self.eid)
 
     def test_remove_A(self):
         # return value, single component type
@@ -416,6 +426,7 @@ class SceneTestCase(unittest.TestCase):
         self.assertRaises(ValueError, self.scene.remove, self.eid, ComponentA)
         self.assertRaises(ValueError, self.scene.remove, self.eid, ComponentA, ComponentB)
         self.assertRaises(ValueError, self.scene.remove, self.eid, ComponentB, ComponentA)
+        self.assertRaises(ValueError, self.scene.remove, self.eid)
 
     def test_remove_XC(self):
         # ValueError, case other components
@@ -425,6 +436,7 @@ class SceneTestCase(unittest.TestCase):
         self.assertRaises(ValueError, self.scene.remove, self.eid, ComponentA)
         self.assertRaises(ValueError, self.scene.remove, self.eid, ComponentA, ComponentB)
         self.assertRaises(ValueError, self.scene.remove, self.eid, ComponentB, ComponentA)
+        self.assertRaises(ValueError, self.scene.remove, self.eid)
 
     def test_select_A(self):
         # case no components
