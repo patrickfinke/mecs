@@ -185,7 +185,7 @@ class Scene():
             archetype, index, eidlist, comptypemap = self._unpackEntity(eid)
 
             if any(type(comp) in comptypemap for comp in comps):
-                raise ValueError(f"component type(s) already present: {str(type(comp)) for comp in comps if type(comp) in comptypemap}")
+                raise ValueError(f"component type(s) already present: {', '.join(str(type(comp)) for comp in comps if type(comp) in comptypemap)}")
 
             complist.extend(comptypemap[comptype][index] for comptype in comptypemap)
 
