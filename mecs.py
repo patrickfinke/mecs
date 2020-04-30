@@ -237,25 +237,26 @@ class Scene():
         if eid > self.lasteid:
             raise KeyError(f"invalid entity id: {eid}")
 
-        if not self.has(eid, *comptypes):
-            if eid in self.entitymap:
-                archetype, _, _, _ = self._unpackEntity(eid)
-            else:
-                archetype = ()
-            raise ValueError(f"missing component type(s): {', '.join(str(ct) for ct in comptypes if ct not in archetype)}")
+        if eid not in self.entitymap:
+            raise ValueError(f"missing component type(s): {', '.join(str(ct) for ct in comptypes)}")
 
-        remaining = list(c for c in self.components(eid) if type(c) not in comptypes)
-        remove = list(c for c in self.components(eid) if c not in remaining)
+        archetype, index, eidlist, comptypemap = self._unpackEntity(eid)
+
+        if not all(ct in comptypemap for ct in comptypes):
+            raise ValueError(f"missing component type(s): {', '.join(str(ct) for ct in comptypes if ct not in comptypemap)}")
+
+        remaining = list(comptypemap[ct][index] for ct in comptypemap if ct not in comptypes)
+        removed = list(comptypemap[ct][index] for ct in comptypes)
 
         self._removeEntity(eid)
 
         if remaining:
             self._addEntity(eid, remaining)
 
-        if len(remove) == 1:
-            return remove[0]
+        if len(removed) == 1:
+            return removed[0]
         else:
-            return remove
+            return removed
 
 
     def start(self, *systems, **kwargs):
