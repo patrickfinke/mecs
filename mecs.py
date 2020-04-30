@@ -174,7 +174,7 @@ class Scene():
 
 
     def add(self, eid, *comps):
-        """Add components to an entity. Returns the component(s) as a list if two or more components are given, or a single component instance if only one component is given. Raises KeyError if the entity id is not valid or ValueError if the entity already has one or more components of the same types."""
+        """Add components to an entity. Returns the component(s) as a list if two or more components are given, or a single component instance if only one component is given. Raises KeyError if the entity id is not valid or ValueError if the entity would have one or more components of the same type after this operation."""
 
         # invalid entity id
         if eid > self.lasteid:
@@ -192,6 +192,11 @@ class Scene():
             self._removeEntity(eid)
 
         complist.extend(comps)
+        archetype = self._getArchetype((type(c) for c in comps))
+
+        if len(set(archetype)) != len(archetype):
+            raise ValueError(f"adding duplicate component type(s): {', '.join(str(ct) for ct in archetype if archetype.count(ct) > 1)}")
+
         self._addEntity(eid, complist)
 
         if len(comps) == 1:

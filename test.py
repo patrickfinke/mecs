@@ -238,8 +238,11 @@ class SceneTestCase(unittest.TestCase):
         self.assertTrue(self.scene.has(self.eid, ComponentA))
 
         self.assertRaises(ValueError, self.scene.add, self.eid, self.componentA2)
-        self.assertRaises(ValueError, self.scene.add, self.eid, self.componentA2, self.componentB)
-        self.assertRaises(ValueError, self.scene.add, self.eid, self.componentB, self.componentA2)
+        self.assertRaises(ValueError, self.scene.add, self.eid, self.componentA2, self.componentB1)
+        self.assertRaises(ValueError, self.scene.add, self.eid, self.componentB1, self.componentA2)
+        self.assertRaises(ValueError, self.scene.add, self.eid, self.componentB1, self.componentB2)
+        self.assertRaises(ValueError, self.scene.add, self.eid, self.componentB2, self.componentB1)
+        self.assertRaises(ValueError, self.scene.add, self.eid, self.componentB1, self.componentB1)
 
     def test_has_A(self):
         # case has no components
