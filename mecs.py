@@ -137,9 +137,12 @@ class Scene():
     def new(self, *comps):
         """Returns a valid and previously unused entity id. If one or more components are supplied to the method, these will be added to the new entity. Raise ValueError if trying to add duplicate component types."""
 
+        # increment valid entity id
         self.lasteid += 1
 
+        # add components
         if comps:
+            # raise ValueError on trying to add duplicate component types
             if len(set(type(comp) for comp in comps)) < len(comps):
                 comptypes = [type(comp) for comp in comps]
                 raise ValueError(f"adding duplicate component type(s): {', '.join(str(ct) for ct in comptypes if comptypes.count(ct) > 1)}")
@@ -151,17 +154,18 @@ class Scene():
     def free(self, eid):
         """Remove all components of an entity. The entity id will not be invalidated by this operation. Returns a list of the components. Raises KeyError if the entity id is not valid."""
 
-        # invalid entity id
+        # raise KeyError on invalid entity id
         if eid > self.lasteid:
             raise KeyError(f"invalid entity id: {eid}")
 
+        # entity has no components
         if eid not in self.entitymap:
             return []
 
         _, index, _, comptypemap = self._unpackEntity(eid)
 
+        # collect the components and remove the entity
         components = [comptypemap[comptype][index] for comptype in comptypemap]
-
         self._removeEntity(eid)
 
         return components
@@ -170,7 +174,7 @@ class Scene():
     def components(self, eid):
         """Returns a tuple of all components of an entity. Raises KeyError if the entity id is not valid."""
 
-        # invalid entity id
+        # raise KeyError on invalid entity id
         if eid > self.lasteid:
             raise KeyError(f"invalid entity id: {eid}")
 
@@ -186,7 +190,7 @@ class Scene():
     def archetype(self, eid):
         """Returns the archetype of an entity. Raises KeyError if the entity id is not valid."""
 
-        # invalid entity id
+        # raise KeyError on invalid entity id
         if eid > self.lasteid:
             raise KeyError(f"invalid entity id: {eid}")
 
@@ -202,29 +206,30 @@ class Scene():
     def add(self, eid, *comps):
         """Add components to an entity. Returns the component(s) as a list if two or more components are given, or a single component instance if only one component is given. Raises KeyError if the entity id is not valid or ValueError if the entity would have one or more components of the same type after this operation or no components are supplied to the method."""
 
-        # invalid entity id
+        # raise KeyError on invalid entity id
         if eid > self.lasteid:
             raise KeyError(f"invalid entity id: {eid}")
 
+        # raise ValueError if no component are given
         if not comps:
             raise ValueError("missing input")
 
-        complist = []
-        if eid in self.entitymap:
-            archetype, index, eidlist, comptypemap = self._unpackEntity(eid)
+        # raise ValueError if trying to add duplicate component types
+        if len(set(type(comp) for comp in comps)) < len(comps):
+            comptypes = [type(comp) for comp in comps]
+            raise ValueError(f"adding duplicate component type(s): {', '.join(str(ct) for ct in comptypes if comptypes.count(ct) > 1)}")
 
+        complist = list(comps)
+        if eid in self.entitymap:
+            _, index, _, comptypemap = self._unpackEntity(eid)
+
+            # raise ValueError if trying to add component types that are already present
             if any(type(comp) in comptypemap for comp in comps):
                 raise ValueError(f"component type(s) already present: {', '.join(str(type(comp)) for comp in comps if type(comp) in comptypemap)}")
 
+            # collect old components and remove the entity
             complist.extend(comptypemap[comptype][index] for comptype in comptypemap)
-
             self._removeEntity(eid)
-
-        complist.extend(comps)
-        archetype = self._getArchetype((type(c) for c in comps))
-
-        if len(set(archetype)) != len(archetype):
-            raise ValueError(f"adding duplicate component type(s): {', '.join(str(ct) for ct in archetype if archetype.count(ct) > 1)}")
 
         self._addEntity(eid, complist)
 
@@ -236,10 +241,11 @@ class Scene():
     def has(self, eid, *comptypes):
         """Return True if the entity has a component of each of the given types, False otherwise. Raises KeyError if the entity id is not valid or ValueError if no component type is supplied to the method."""
 
-        # invalid entity id
+        # raise KeyError on invalid entity id
         if eid > self.lasteid:
             raise KeyError(f"invalid entity id: {eid}")
 
+        # raise ValueError if no component types are given
         if not comptypes:
             raise ValueError("missing input")
 
@@ -254,18 +260,21 @@ class Scene():
     def get(self, eid, *comptypes):
         """Get components from an entity. Returns a list of the components if two or more component types are given, or a single component instance if only one component type is given. Raises KeyError if the entity id is not valid or ValueError if a component of any of the given types is missing or if no component types are supplied to the method."""
 
-        # invalid entity id
+        # raise KeyError on invalid entity id
         if eid > self.lasteid:
             raise KeyError(f"invalid entity id: {eid}")
 
+        # raise ValueError if no component types are given
         if not comptypes:
             raise ValueError("missing input")
 
+        # raise ValueError if the entity does not have any components
         if eid not in self.entitymap:
             raise ValueError(f"missing component type(s): {', '.join(str(ct) for ct in comptypes)}")
 
-        archetype, index, eidlist, comptypemap = self._unpackEntity(eid)
+        _, index, _, comptypemap = self._unpackEntity(eid)
 
+        # raise ValueError if the entity does not have the requested component types
         if not all(ct in comptypemap for ct in comptypes):
             raise ValueError(f"missing component type(s): {', '.join(str(ct) for ct in comptypes if ct not in comptypemap)}")
 
@@ -277,26 +286,30 @@ class Scene():
     def remove(self, eid, *comptypes):
         """Remove components from an entity. Returns a list of the components if two or more component types are given, or a single component instance if only one component type is given. Raises KeyError if the entity id is not valid or ValueError if the entity does not have a component of any of the given types or if no component types are supplied to the method."""
 
-        # invalid entity id
+        # raise KeyError on invalid entity id
         if eid > self.lasteid:
             raise KeyError(f"invalid entity id: {eid}")
 
+        # raise ValueError if no component types are given
         if not comptypes:
             raise ValueError("missing input")
 
+        # raise ValueError if the entity does not have any components
         if eid not in self.entitymap:
             raise ValueError(f"missing component type(s): {', '.join(str(ct) for ct in comptypes)}")
 
-        archetype, index, eidlist, comptypemap = self._unpackEntity(eid)
+        _, index, _, comptypemap = self._unpackEntity(eid)
 
+        # raise ValueError if the entity does not have the requested component types
         if not all(ct in comptypemap for ct in comptypes):
             raise ValueError(f"missing component type(s): {', '.join(str(ct) for ct in comptypes if ct not in comptypemap)}")
 
+        # collect components that will remain on the entity and the ones to be removed
         remaining = list(comptypemap[ct][index] for ct in comptypemap if ct not in comptypes)
         removed = list(comptypemap[ct][index] for ct in comptypes)
 
+        # remove the entity and add it back if there are remaining components
         self._removeEntity(eid)
-
         if remaining:
             self._addEntity(eid, remaining)
 
@@ -328,15 +341,19 @@ class Scene():
     def select(self, *comptypes, exclude=None):
         """Iterate over entity ids and their corresponding components. Yields tuples of the form (eid, (compA, compB, ...)) where compA, compB, ... are of the given component types and belong to the entity with entity id eid. If no component types are given, iterate over all entities. If exclude is not None, entities with component types listed in exclude will not be returned. Raises ValueError if exclude contains component types that are also explicitly included."""
 
+        # raise ValueError if trying to exclude component types that are also included
         if exclude and any(ct in exclude for ct in comptypes):
             raise ValueError(f"excluding explicitely included component types: {', '.join(str(x) for x in set(comptypes).intersection(exclude))}")
 
+        # collect archetypes that should be included and archetypes that should be excluded
         incarchetypes = set.intersection(*[self.archetypemap.get(ct, set()) for ct in comptypes]) if comptypes else set(self.chunkmap.keys())
         excarchetypes = set.union(*[self.archetypemap.get(ct, set()) for ct in exclude]) if exclude else set()
 
+        # iterate over all included archetype that are not excluded
         archetypes = incarchetypes - excarchetypes
         for archetype in archetypes:
             eidlist, comptypemap = self.chunkmap[archetype]
+            # yield in the right format
             if comptypes:
                 complists = [comptypemap[ct] for ct in comptypes]
                 for eid, comps in zip(eidlist, zip(*complists)):
