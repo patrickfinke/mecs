@@ -73,13 +73,33 @@ class SceneTestCase(unittest.TestCase):
 
         self.invalideid = 100
 
-    def test_new(self):
+    def test_new_A(self):
+        # new entity id
         used = []
         for _ in range(10):
             eid = self.scene.new()
             self.assertFalse(eid in used)
 
             used.append(eid)
+
+    def test_new_B(self):
+        # adding components
+        eid = self.scene.new()
+        self.assertFalse(self.scene.has(eid, ComponentA))
+        self.assertFalse(self.scene.has(eid, ComponentB))
+
+        eid = self.scene.new(self.componentA)
+        self.assertTrue(self.scene.has(eid, ComponentA))
+        self.assertFalse(self.scene.has(eid, ComponentB))
+
+        eid = self.scene.new(self.componentA, self.componentB)
+        self.assertTrue(self.scene.has(eid, ComponentA))
+        self.assertTrue(self.scene.has(eid, ComponentB))
+
+    def test_new_XA(self):
+        # ValueError
+        self.assertRaises(ValueError, self.scene.new, self.componentB, self.componentA, self.componentA)
+        self.assertRaises(ValueError, self.scene.new, self.componentB, self.componentA1, self.componentA2)
 
     def test_free_A(self):
         # case has components

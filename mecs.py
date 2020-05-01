@@ -116,10 +116,18 @@ class Scene():
 
         return CommandBuffer(self)
 
-    def new(self):
-        """Returns a valid and previously unused entity id."""
+    def new(self, *comps):
+        """Returns a valid and previously unused entity id. If one or more components are supplied to the method, these will be added to the new entity. Raise ValueError if trying to add duplicate component types."""
 
         self.lasteid += 1
+
+        if comps:
+            if len(set(type(comp) for comp in comps)) < len(comps):
+                comptypes = [type(comp) for comp in comps]
+                raise ValueError(f"adding duplicate component type(s): {', '.join(str(ct) for ct in comptypes if comptypes.count(ct) > 1)}")
+
+            self._addEntity(self.lasteid, comps)
+
         return self.lasteid
 
     def free(self, eid):
