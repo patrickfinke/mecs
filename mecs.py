@@ -7,12 +7,23 @@ class CommandBuffer():
     def __init__(self, scene):
         self.scene = scene
         self.commands = []
+        self.lasteid = 0
+        self.eidmap = {}
 
     def __enter__(self):
         return self
 
     def __exit__(self, type, value, traceback):
         self.flush()
+
+    def new(self, *comps):
+        """Returns an entity id that is only valid to use with the current buffer. If one or more components are supplied to the method, these will be added to the new entity."""
+
+        self.lasteid -= 1
+
+        self.commands.append((self.scene.new, (self.lasteid, *comps,)))
+
+        return self.lasteid
 
     def add(self, eid, *comps):
         """Add a component to an entity. The component will not be added immediately, but when the buffer is flushed. In particular, exceptions do not occur when calling this method, but only when the buffer is flushed."""
@@ -29,7 +40,14 @@ class CommandBuffer():
     def flush(self):
         """Flush the buffer. This will apply all commands that have been previously added to the buffer. If any arguments in these commands are faulty, exceptions may arrise."""
         for cmd, args in self.commands:
-            cmd(*args)
+            if cmd == self.scene.new:
+                eid, *comps = args
+                realeid = self.scene.new(*comps)
+                self.eidmap[eid] = realeid
+            else:
+                eid, *other = args
+                if eid < 0: eid = self.eidmap[eid]
+                cmd(eid, *other)
         self.commands.clear()
 
 class Scene():

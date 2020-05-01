@@ -51,6 +51,27 @@ class SystemValueError():
     init = update
     destroy = update
 
+class CommandBufferTestCase(unittest.TestCase):
+    def setUp(self):
+        self.scene = Scene()
+        self.componentA = ComponentA(0)
+        self.componentB = ComponentB(0)
+
+    def test_new(self):
+        with self.scene.buffer() as buffer:
+            eid = buffer.new(self.componentA)
+            eid2 = buffer.new()
+            buffer.add(eid2, self.componentB)
+
+        seen = False
+        for eid, (compA,) in self.scene.select(ComponentA):
+            seen = self.scene.has(eid, ComponentA)
+        self.assertTrue(seen)
+
+        seen = False
+        for eid, (compB,) in self.scene.select(ComponentB):
+            seen = self.scene.has(eid, ComponentB)
+        self.assertTrue(seen)
 
 class SceneTestCase(unittest.TestCase):
     def setUp(self):
