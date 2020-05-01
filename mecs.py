@@ -155,7 +155,7 @@ class Scene():
         """Remove all components of an entity. The entity id will not be invalidated by this operation. Returns a list of the components. Raises KeyError if the entity id is not valid."""
 
         # raise KeyError on invalid entity id
-        if eid > self.lasteid:
+        if eid < 0 or eid > self.lasteid:
             raise KeyError(f"invalid entity id: {eid}")
 
         # entity has no components
@@ -175,7 +175,7 @@ class Scene():
         """Returns a tuple of all components of an entity. Raises KeyError if the entity id is not valid."""
 
         # raise KeyError on invalid entity id
-        if eid > self.lasteid:
+        if eid < 0 or eid > self.lasteid:
             raise KeyError(f"invalid entity id: {eid}")
 
         # entity has no components
@@ -191,7 +191,7 @@ class Scene():
         """Returns the archetype of an entity. Raises KeyError if the entity id is not valid."""
 
         # raise KeyError on invalid entity id
-        if eid > self.lasteid:
+        if eid < 0 or eid > self.lasteid:
             raise KeyError(f"invalid entity id: {eid}")
 
         # entity has no components
@@ -207,7 +207,7 @@ class Scene():
         """Add components to an entity. Returns the component(s) as a list if two or more components are given, or a single component instance if only one component is given. Raises KeyError if the entity id is not valid or ValueError if the entity would have one or more components of the same type after this operation or no components are supplied to the method."""
 
         # raise KeyError on invalid entity id
-        if eid > self.lasteid:
+        if eid < 0 or eid > self.lasteid:
             raise KeyError(f"invalid entity id: {eid}")
 
         # raise ValueError if no component are given
@@ -242,7 +242,7 @@ class Scene():
         """Return True if the entity has a component of each of the given types, False otherwise. Raises KeyError if the entity id is not valid or ValueError if no component type is supplied to the method."""
 
         # raise KeyError on invalid entity id
-        if eid > self.lasteid:
+        if eid < 0 or eid > self.lasteid:
             raise KeyError(f"invalid entity id: {eid}")
 
         # raise ValueError if no component types are given
@@ -261,7 +261,7 @@ class Scene():
         """Get components from an entity. Returns a list of the components if two or more component types are given, or a single component instance if only one component type is given. Raises KeyError if the entity id is not valid or ValueError if a component of any of the given types is missing or if no component types are supplied to the method."""
 
         # raise KeyError on invalid entity id
-        if eid > self.lasteid:
+        if eid < 0 or eid > self.lasteid:
             raise KeyError(f"invalid entity id: {eid}")
 
         # raise ValueError if no component types are given
@@ -287,7 +287,7 @@ class Scene():
         """Remove components from an entity. Returns a list of the components if two or more component types are given, or a single component instance if only one component type is given. Raises KeyError if the entity id is not valid or ValueError if the entity does not have a component of any of the given types or if no component types are supplied to the method."""
 
         # raise KeyError on invalid entity id
-        if eid > self.lasteid:
+        if eid < 0 or eid > self.lasteid:
             raise KeyError(f"invalid entity id: {eid}")
 
         # raise ValueError if no component types are given
