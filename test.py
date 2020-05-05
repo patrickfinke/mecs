@@ -331,53 +331,90 @@ class SceneTestCase(unittest.TestCase):
         self.scene.add(self.eid, self.componentA)
         self.assertRaises(ValueError, self.scene.has, self.eid)
 
+    def test_collect_A(self):
+        # case no components
+        self.assertEqual(list(self.scene.collect(self.eid)), [])
+
+        # case one component
+        self.scene.add(self.eid, self.componentA)
+        self.assertTrue(self.scene.has(self.eid, ComponentA))
+
+        self.assertEqual(list(self.scene.collect(self.eid)), [])
+        self.assertEqual(list(self.scene.collect(self.eid, ComponentA)), [self.componentA])
+
+        # case two components
+        self.scene.add(self.eid, self.componentB)
+        self.assertTrue(self.scene.has(self.eid, ComponentA, ComponentB))
+
+        self.assertEqual(list(self.scene.collect(self.eid)), [])
+        self.assertEqual(list(self.scene.collect(self.eid, ComponentA)), [self.componentA])
+        self.assertEqual(list(self.scene.collect(self.eid, ComponentB)), [self.componentB])
+        self.assertEqual(list(self.scene.collect(self.eid, ComponentA, ComponentB)), [self.componentA, self.componentB])
+        self.assertEqual(list(self.scene.collect(self.eid, ComponentB, ComponentA)), [self.componentB, self.componentA])
+
+    def test_collect_XA(self):
+        # KeyError
+        self.assertRaises(KeyError, self.scene.collect, 99999, ComponentA)
+        self.assertRaises(KeyError, self.scene.collect, self.invalideid, ComponentB)
+        self.assertRaises(KeyError, self.scene.collect, self.invalideid, ComponentA, ComponentB)
+        self.assertRaises(KeyError, self.scene.collect, self.invalideid, ComponentB, ComponentA)
+        self.assertRaises(KeyError, self.scene.collect, self.negativeeid, ComponentA)
+        self.assertRaises(KeyError, self.scene.collect, self.negativeeid, ComponentB)
+        self.assertRaises(KeyError, self.scene.collect, self.negativeeid, ComponentA, ComponentB)
+        self.assertRaises(KeyError, self.scene.collect, self.negativeeid, ComponentB, ComponentA)
+
+    def test_collect_XB(self):
+        # ValueError, case no components
+        self.assertRaises(ValueError, self.scene.collect, self.eid, ComponentA)
+        self.assertRaises(ValueError, self.scene.collect, self.eid, ComponentB)
+        self.assertRaises(ValueError, self.scene.collect, self.eid, ComponentA, ComponentB)
+        self.assertRaises(ValueError, self.scene.collect, self.eid, ComponentB, ComponentA)
+
+        # ValueError, case has components
+        self.scene.add(self.eid, self.componentB)
+        self.assertTrue(self.scene.has(self.eid, ComponentB))
+
+        self.assertRaises(ValueError, self.scene.collect, self.eid, ComponentA)
+        self.assertRaises(ValueError, self.scene.collect, self.eid, ComponentA, ComponentB)
+        self.assertRaises(ValueError, self.scene.collect, self.eid, ComponentB, ComponentA)
+
     def test_get_A(self):
         # case one component
         self.scene.add(self.eid, self.componentA)
         self.assertTrue(self.scene.has(self.eid, ComponentA))
 
-        self.assertEqual(self.scene.get(self.eid, ComponentA), self.componentA)
+        result = self.scene.get(self.eid, ComponentA)
+        self.assertEqual(result, self.componentA)
 
-    def test_get_B(self):
         # case two components
-        self.scene.add(self.eid, self.componentA)
         self.scene.add(self.eid, self.componentB)
-        self.assertTrue(self.scene.has(self.eid, ComponentA))
         self.assertTrue(self.scene.has(self.eid, ComponentB))
 
-        self.assertEqual(self.scene.get(self.eid, ComponentA), self.componentA)
-        self.assertEqual(self.scene.get(self.eid, ComponentB), self.componentB)
-        self.assertEqual(self.scene.get(self.eid, ComponentA, ComponentB), [self.componentA, self.componentB])
-        self.assertEqual(self.scene.get(self.eid, ComponentB, ComponentA), [self.componentB, self.componentA])
+        resultA = self.scene.get(self.eid, ComponentA)
+        resultB = self.scene.get(self.eid, ComponentB)
+        self.assertEqual(resultA, self.componentA)
+        self.assertEqual(resultB, self.componentB)
 
     def test_get_XA(self):
         # KeyError
+        self.scene.add(self.eid, self.componentA)
+        self.assertTrue(self.scene.has(self.eid, ComponentA))
+
         self.assertRaises(KeyError, self.scene.get, self.invalideid, ComponentA)
         self.assertRaises(KeyError, self.scene.get, self.invalideid, ComponentB)
-        self.assertRaises(KeyError, self.scene.get, self.invalideid, ComponentA, ComponentB)
-        self.assertRaises(KeyError, self.scene.get, self.invalideid, ComponentB, ComponentA)
         self.assertRaises(KeyError, self.scene.get, self.negativeeid, ComponentA)
         self.assertRaises(KeyError, self.scene.get, self.negativeeid, ComponentB)
-        self.assertRaises(KeyError, self.scene.get, self.negativeeid, ComponentA, ComponentB)
-        self.assertRaises(KeyError, self.scene.get, self.negativeeid, ComponentB, ComponentA)
 
     def test_get_XB(self):
-        # ValueError, case no components
+        # ValueError
+        # case no components
         self.assertRaises(ValueError, self.scene.get, self.eid, ComponentA)
-        self.assertRaises(ValueError, self.scene.get, self.eid, ComponentB)
-        self.assertRaises(ValueError, self.scene.get, self.eid, ComponentA, ComponentB)
-        self.assertRaises(ValueError, self.scene.get, self.eid, ComponentB, ComponentA)
-        self.assertRaises(ValueError, self.scene.get, self.eid)
 
-    def test_get_XC(self):
-        # ValueError, case has components
+        # case other components
         self.scene.add(self.eid, self.componentB)
         self.assertTrue(self.scene.has(self.eid, ComponentB))
 
         self.assertRaises(ValueError, self.scene.get, self.eid, ComponentA)
-        self.assertRaises(ValueError, self.scene.get, self.eid, ComponentA, ComponentB)
-        self.assertRaises(ValueError, self.scene.get, self.eid, ComponentB, ComponentA)
-        self.assertRaises(ValueError, self.scene.get, self.eid)
 
     def test_remove_A(self):
         # return value, single component type

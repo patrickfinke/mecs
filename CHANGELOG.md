@@ -4,8 +4,8 @@ All notable changes to this project will be documented in this file. This projec
 
 - **unreleased**
 
-  - Add support for multiple components/component types to `scene.add()`, `scene.has()`, `scene.get()`, and `scene.remove()`. This does not only lead to shorter and more readable code, but can also improve performance.
-  - Add support for multiple components/component types to `CommandBuffer.add()` and `CommandBuffer.remove()`.
+  - Add support for multiple components/component types to `scene.add()`, `scene.has()`, and `scene.remove()` aswell as `CommandBuffer.add()` and `CommandBuffer.remove()`. This does not only lead to shorter and more readable code, but can also improve performance.
+  - Add `scene.collect()` to retrieve more than one component at once.
   - Add support for adding components directly when allocating a new entity id with `scene.new()`.
   - Add `CommandBuffer.new()` as the counterpart to `scene.new()`.
   - Add informative messages to exceptions.

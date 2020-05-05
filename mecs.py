@@ -257,16 +257,19 @@ class Scene():
 
         return all(ct in comptypemap for ct in comptypes)
 
-    def get(self, eid, *comptypes):
-        """Get components from an entity. Returns a list of the components if two or more component types are given, or a single component instance if only one component type is given. Raises KeyError if the entity id is not valid or ValueError if a component of any of the given types is missing or if no component types are supplied to the method."""
+    def collect(self, eid, *comptypes):
+        """Collect multiple components of an entity. Returns a list of the components. Raises KeyError if the entity id is not valid or ValueError if a component of any of the requested types is missing.
+
+        New in version 1.2
+        """
 
         # raise KeyError on invalid entity id
         if eid < 0 or eid > self.lasteid:
             raise KeyError(f"invalid entity id: {eid}")
 
-        # raise ValueError if no component types are given
+        # yield from empty generator if no components are requested
         if not comptypes:
-            raise ValueError("missing input")
+            return []
 
         # raise ValueError if the entity does not have any components
         if eid not in self.entitymap:
@@ -278,10 +281,26 @@ class Scene():
         if not all(ct in comptypemap for ct in comptypes):
             raise ValueError(f"missing component type(s): {', '.join(str(ct) for ct in comptypes if ct not in comptypemap)}")
 
-        if len(comptypes) == 1:
-            return comptypemap[comptypes[0]][index]
-        else:
-            return [comptypemap[ct][index] for ct in comptypes]
+        return [comptypemap[ct][index] for ct in comptypes]
+
+    def get(self, eid, comptype):
+        """Get one component of an entity. Returns the component. Raises KeyError if the entity id is not valid or ValueError if the entity does not have a component of the requested type."""
+
+        # raise KeyError on invalid entity id
+        if eid < 0 or eid > self.lasteid:
+            raise KeyError(f"invalid entity id: {eid}")
+
+        # raise ValueError if the entity does not have any components
+        if eid not in self.entitymap:
+            raise ValueError(f"missing component type: {str(comptype)}")
+
+        _, index, _, comptypemap = self._unpackEntity(eid)
+
+        # raise ValueError if the entity does not have the requested component type
+        if comptype not in comptypemap:
+            raise ValueError(f"missing component type: {str(comptype)}")
+
+        return comptypemap[comptype][index]
 
     def remove(self, eid, *comptypes):
         """Remove components from an entity. Returns a list of the components if two or more component types are given, or a single component instance if only one component type is given. Raises KeyError if the entity id is not valid or ValueError if the entity does not have a component of any of the given types or if no component types are supplied to the method."""
