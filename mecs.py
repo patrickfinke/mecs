@@ -3,8 +3,13 @@
 __version__ = '1.1.0'
 
 class CommandBuffer():
-    """A buffer that stores commands and plays them back later."""
+    """A buffer that stores commands and plays them back later.
+
+    *New in version 1.1.*
+    """
+
     def __init__(self, scene):
+        """Associate the buffer with the provided scene."""
         self.scene = scene
         self.commands = []
         self.lasteid = 0
@@ -17,28 +22,34 @@ class CommandBuffer():
         self.flush()
 
     def new(self, *comps):
-        """Returns an entity id that is only valid to use with the current buffer. If one or more components are supplied to the method, these will be added to the new entity."""
+        """Returns an entity id that is only valid to use with the current buffer. If one or more components are supplied to the method, these will be added to the new entity.
+
+        *New in version 1.2.*
+        """
 
         self.lasteid -= 1
-
         self.commands.append((self.scene.new, (self.lasteid, *comps,)))
 
         return self.lasteid
 
     def add(self, eid, *comps):
         """Add a component to an entity. The component will not be added immediately, but when the buffer is flushed. In particular, exceptions do not occur when calling this method, but only when the buffer is flushed."""
+
         self.commands.append((self.scene.add, (eid, *comps)))
 
     def remove(self, eid, *comptypes):
         """Remove a component from an entity. The component will not be removed immediately, but when the buffer is flushed. In particular, exceptions do not occur when calling this method, but only when the buffer is flushed."""
+
         self.commands.append((self.scene.remove, (eid, *comptypes)))
 
     def free(self, eid):
         """Remove all components of an entity. The components will not be removed immediately, but when the buffer if flushed. In particular, exceptions do not occur when calling this method, but only when the buffer is flushed."""
+
         self.commands.append((self.scene.free, (eid,)))
 
     def flush(self):
-        """Flush the buffer. This will apply all commands that have been previously added to the buffer. If any arguments in these commands are faulty, exceptions may arrise."""
+        """Flush the buffer. This will apply all commands that have been previously stored in the buffer to its associated scene. If any arguments in these commands are faulty, exceptions may arrise."""
+
         for cmd, args in self.commands:
             if cmd == self.scene.new:
                 eid, *comps = args
@@ -51,6 +62,8 @@ class CommandBuffer():
         self.commands.clear()
 
 class Scene():
+    """A scene of entities that allows for efficient component management."""
+
     def __init__(self):
         self.entitymap = {} # {eid: (archetype, index)}
         self.archetypemap = {} # {component type: set(archetype)}
@@ -130,12 +143,18 @@ class Scene():
         self.entitymap[eid] = (archetype, index)
 
     def buffer(self):
-        """Return a new command buffer for this scene."""
+        """Return a new command buffer that is associated to this scene.
+
+        *New in version 1.1.*
+        """
 
         return CommandBuffer(self)
 
     def new(self, *comps):
-        """Returns a valid and previously unused entity id. If one or more components are supplied to the method, these will be added to the new entity. Raise ValueError if trying to add duplicate component types."""
+        """Returns a valid and previously unused entity id. If one or more components are supplied to the method, these will be added to the new entity. Raises *ValueError* if trying to add duplicate component types.
+
+        *Changed in version 1.2:* Added the optional *comps* parameter.
+        """
 
         # increment valid entity id
         self.lasteid += 1
@@ -152,7 +171,7 @@ class Scene():
         return self.lasteid
 
     def free(self, eid):
-        """Remove all components of an entity. The entity id will not be invalidated by this operation. Returns a list of the components. Raises KeyError if the entity id is not valid."""
+        """Remove all components of an entity. The entity id will not be invalidated by this operation. Returns a list of the components. Raises *KeyError* if the entity id is not valid."""
 
         # raise KeyError on invalid entity id
         if eid < 0 or eid > self.lasteid:
@@ -172,7 +191,7 @@ class Scene():
 
 
     def components(self, eid):
-        """Returns a tuple of all components of an entity. Raises KeyError if the entity id is not valid."""
+        """Returns a tuple of all components of an entity. Raises *KeyError* if the entity id is not valid."""
 
         # raise KeyError on invalid entity id
         if eid < 0 or eid > self.lasteid:
@@ -188,7 +207,7 @@ class Scene():
 
 
     def archetype(self, eid):
-        """Returns the archetype of an entity. Raises KeyError if the entity id is not valid."""
+        """Returns the archetype of an entity. Raises *KeyError* if the entity id is not valid."""
 
         # raise KeyError on invalid entity id
         if eid < 0 or eid > self.lasteid:
@@ -204,7 +223,10 @@ class Scene():
 
 
     def add(self, eid, *comps):
-        """Add components to an entity. Returns the component(s) as a list if two or more components are given, or a single component instance if only one component is given. Raises KeyError if the entity id is not valid or ValueError if the entity would have one or more components of the same type after this operation or no components are supplied to the method."""
+        """Add components to an entity. Returns the component(s) as a list if two or more components are given, or a single component instance if only one component is given. Raises *KeyError* if the entity id is not valid or *ValueError* if the entity would have one or more components of the same type after this operation or no components are supplied to the method.
+
+        *Changed in version 1.2:* Added support for multiple components.
+        """
 
         # raise KeyError on invalid entity id
         if eid < 0 or eid > self.lasteid:
@@ -239,7 +261,10 @@ class Scene():
             return list(comps)
 
     def has(self, eid, *comptypes):
-        """Return True if the entity has a component of each of the given types, False otherwise. Raises KeyError if the entity id is not valid or ValueError if no component type is supplied to the method."""
+        """Return *True* if the entity has a component of each of the given types, *False* otherwise. Raises *KeyError* if the entity id is not valid or *ValueError* if no component type is supplied to the method.
+
+        *Changed in version 1.2:* Added support for multiple component types.
+        """
 
         # raise KeyError on invalid entity id
         if eid < 0 or eid > self.lasteid:
@@ -258,9 +283,9 @@ class Scene():
         return all(ct in comptypemap for ct in comptypes)
 
     def collect(self, eid, *comptypes):
-        """Collect multiple components of an entity. Returns a list of the components. Raises KeyError if the entity id is not valid or ValueError if a component of any of the requested types is missing.
+        """Collect multiple components of an entity. Returns a list of the components. Raises *KeyError* if the entity id is not valid or *ValueError* if a component of any of the requested types is missing.
 
-        New in version 1.2
+        *New in version 1.2.*
         """
 
         # raise KeyError on invalid entity id
@@ -284,7 +309,7 @@ class Scene():
         return [comptypemap[ct][index] for ct in comptypes]
 
     def get(self, eid, comptype):
-        """Get one component of an entity. Returns the component. Raises KeyError if the entity id is not valid or ValueError if the entity does not have a component of the requested type."""
+        """Get one component of an entity. Returns the component. Raises *KeyError* if the entity id is not valid or *ValueError* if the entity does not have a component of the requested type."""
 
         # raise KeyError on invalid entity id
         if eid < 0 or eid > self.lasteid:
@@ -303,7 +328,10 @@ class Scene():
         return comptypemap[comptype][index]
 
     def remove(self, eid, *comptypes):
-        """Remove components from an entity. Returns a list of the components if two or more component types are given, or a single component instance if only one component type is given. Raises KeyError if the entity id is not valid or ValueError if the entity does not have a component of any of the given types or if no component types are supplied to the method."""
+        """Remove components from an entity. Returns a list of the components if two or more component types are given, or a single component instance if only one component type is given. Raises *KeyError* if the entity id is not valid or *ValueError* if the entity does not have a component of any of the given types or if no component types are supplied to the method.
+
+        *Changed in version 1.2:* Added support for multiple component types.
+        """
 
         # raise KeyError on invalid entity id
         if eid < 0 or eid > self.lasteid:
@@ -339,26 +367,26 @@ class Scene():
 
 
     def start(self, *systems, **kwargs):
-        """Initialize the scene. All systems must implement an 'onStart(scene, **kwargs)' method where this scene instance will be passed as the first argument and the **kwargs of this method will also be passed on. The systems will be called in the same order they are supplied to this method."""
+        """Initialize the scene. All systems must implement an `onStart(scene, **kwargs)` method where this scene instance will be passed as the first argument and the `kwargs` of this method will also be passed on. The systems will be called in the same order they are supplied to this method."""
 
         for system in systems:
             system.onStart(self, **kwargs)
 
     def update(self, *systems, **kwargs):
-        """Update the scene. All systems must implement an 'onUpdate(self, scene, **kwargs)' method where this scene instance will be passed as the first argument and the **kwargs of this method will also be passed on. The systems will be called in the same order they are supplied to this method."""
+        """Update the scene. All systems must implement an `onUpdate(scene, **kwargs)` method where this scene instance will be passed as the first argument and the `kwargs` of this method will also be passed on. The systems will be called in the same order they are supplied to this method."""
 
         for system in systems:
             system.onUpdate(self, **kwargs)
 
     def stop(self, *systems, **kwargs):
-        """Clean up the scene. All systems must implement an 'onStop(self, scene, **kwargs)' method where this scene instance will be passed as the first argument and the **kwargs of this method will also be passed on. The systems will be called in the same order they are supplied to this method."""
+        """Clean up the scene. All systems must implement an 'onStop(scene, **kwargs)' method where this scene instance will be passed as the first argument and the `kwargs` of this method will also be passed on. The systems will be called in the same order they are supplied to this method."""
 
         for system in systems:
             system.onStop(self, **kwargs)
 
 
     def select(self, *comptypes, exclude=None):
-        """Iterate over entity ids and their corresponding components. Yields tuples of the form (eid, (compA, compB, ...)) where compA, compB, ... are of the given component types and belong to the entity with entity id eid. If no component types are given, iterate over all entities. If exclude is not None, entities with component types listed in exclude will not be returned. Raises ValueError if exclude contains component types that are also explicitly included."""
+        """Iterate over entity ids and their corresponding components. Yields tuples of the form `(eid, (compA, compB, ...))` where `compA`, `compB`, ... are of the given component types and belong to the entity with entity id eid. If no component types are given, iterate over all entities. If *exclude* is not *None*, entities with component types listed in *exclude* will not be considered. Raises *ValueError* if *exclude* contains component types that are also explicitly included."""
 
         # raise ValueError if trying to exclude component types that are also included
         if exclude and any(ct in exclude for ct in comptypes):
