@@ -33,12 +33,27 @@ class CommandBuffer():
         return self.lasteid
 
     def add(self, eid, *comps):
-        """Add a component to an entity. The component will not be added immediately, but when the buffer is flushed. In particular, exceptions do not occur when calling this method, but only when the buffer is flushed."""
+        """Add a component to an entity. The component will not be added immediately, but when the buffer is flushed. In particular, exceptions do not occur when calling this method, but only when the buffer is flushed.
+
+        *Changed in version 1.2:* Added support for multiple components.
+        *Deprecated since version 1.2:* Use *set()* instead.
+        """
 
         self.commands.append((self.scene.add, (eid, *comps)))
 
+    def set(self, eid, *comps):
+        """Set components of an entity. The componentes will not be set immediately, but when the buffer is flushed. In particular, exception do not ossur when calling this method, but only when the buffer if flushed.
+
+        *New in version 1.2.*
+        """
+
+        self.commands.append((self.scene.set, (eid, *comps)))
+
     def remove(self, eid, *comptypes):
-        """Remove a component from an entity. The component will not be removed immediately, but when the buffer is flushed. In particular, exceptions do not occur when calling this method, but only when the buffer is flushed."""
+        """Remove a component from an entity. The component will not be removed immediately, but when the buffer is flushed. In particular, exceptions do not occur when calling this method, but only when the buffer is flushed.
+
+        *Changed in version 1.2:* Added support for multiple component types.
+        """
 
         self.commands.append((self.scene.remove, (eid, *comptypes)))
 
@@ -226,6 +241,7 @@ class Scene():
         """Add components to an entity. Returns the component(s) as a list if two or more components are given, or a single component instance if only one component is given. Raises *KeyError* if the entity id is not valid or *ValueError* if the entity would have one or more components of the same type after this operation or no components are supplied to the method.
 
         *Changed in version 1.2:* Added support for multiple components.
+        *Deprecated since version 1.2:* Use *set()* instead.
         """
 
         # raise KeyError on invalid entity id
@@ -259,6 +275,37 @@ class Scene():
             return comps[0]
         else:
             return list(comps)
+
+    def set(self, eid, *comps):
+        """Set components of an entity. Raises *KeyError* if the entity id is not valid or *ValueError* if trying to set two or more components of the same type simultaneously.
+
+        *New in version 1.2.*
+        """
+
+        # raise KeyError on invalid entity id
+        if eid < 0 or eid > self.lasteid:
+            raise KeyError(f"invalid entity id: {eid}")
+
+        # skip if no components are given
+        if not comps:
+            return
+
+        # sort components by type
+        compdict = {type(comp): comp for comp in comps}
+
+        # raise ValueError if trying to set duplicate component types
+        if len(compdict) < len(comps):
+            comptypes = list(compdict.keys())
+            raise ValueError(f"duplicate component type(s): {', '.join(str(ct) for ct in comptypes if comptypes.count(ct) > 1)}")
+
+        # merge with old components, newer ones taking precedence
+        if eid in self.entitymap:
+            _, index, _, comptypemap = self._unpackEntity(eid)
+            compdict = {**{comptype: comptypemap[comptype][index] for comptype in comptypemap}, **compdict}
+
+            self._removeEntity(eid)
+
+        self._addEntity(eid, compdict.values())
 
     def has(self, eid, *comptypes):
         """Return *True* if the entity has a component of each of the given types, *False* otherwise. Raises *KeyError* if the entity id is not valid or *ValueError* if no component type is supplied to the method.

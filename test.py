@@ -293,6 +293,47 @@ class SceneTestCase(unittest.TestCase):
         self.assertRaises(ValueError, self.scene.add, self.eid, self.componentB1, self.componentB1)
         self.assertRaises(ValueError, self.scene.add, self.eid)
 
+    def test_set_A(self):
+        self.assertFalse(self.scene.has(self.eid, ComponentA, ComponentB))
+
+        # adding
+        self.scene.set(self.eid, self.componentA1)
+        self.assertTrue(self.scene.has(self.eid, ComponentA))
+        self.assertEqual(self.scene.get(self.eid, ComponentA), self.componentA1)
+        self.assertFalse(self.scene.has(self.eid, ComponentB))
+
+        # adding and overwriting
+        self.scene.set(self.eid, self.componentA2, self.componentB2)
+        self.assertTrue(self.scene.has(self.eid, ComponentA, ComponentB))
+        self.assertEqual(self.scene.get(self.eid, ComponentA), self.componentA2)
+        self.assertEqual(self.scene.get(self.eid, ComponentB), self.componentB2)
+
+    def test_set_XA(self):
+        # KeyError
+        self.scene.set(self.eid, self.componentA)
+        self.assertTrue(self.scene.has(self.eid, ComponentA))
+
+        self.assertRaises(KeyError, self.scene.set, self.invalideid)
+        self.assertRaises(KeyError, self.scene.set, self.invalideid, self.componentA)
+        self.assertRaises(KeyError, self.scene.set, self.invalideid, self.componentB)
+        self.assertRaises(KeyError, self.scene.set, self.invalideid, self.componentA, self.componentB)
+        self.assertRaises(KeyError, self.scene.set, self.negativeeid)
+        self.assertRaises(KeyError, self.scene.set, self.negativeeid, self.componentA)
+        self.assertRaises(KeyError, self.scene.set, self.negativeeid, self.componentB)
+        self.assertRaises(KeyError, self.scene.set, self.negativeeid, self.componentA, self.componentB)
+
+    def test_set_XB(self):
+        # ValueError
+        self.scene.set(self.eid, self.componentA)
+        self.assertTrue(self.scene.has(self.eid, ComponentA))
+
+        self.assertRaises(ValueError, self.scene.set, self.eid, self.componentA, self.componentA)
+        self.assertRaises(ValueError, self.scene.set, self.eid, self.componentA1, self.componentA2)
+        self.assertRaises(ValueError, self.scene.set, self.eid, self.componentB, self.componentB)
+        self.assertRaises(ValueError, self.scene.set, self.eid, self.componentB1, self.componentB2)
+        self.assertRaises(ValueError, self.scene.set, self.eid, self.componentA1, self.componentA2, self.componentB)
+        self.assertRaises(ValueError, self.scene.set, self.eid, self.componentA, self.componentB1, self.componentB2)
+
     def test_has_A(self):
         # case has no components
         self.assertFalse(self.scene.has(self.eid, ComponentA))
