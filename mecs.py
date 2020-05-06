@@ -161,6 +161,7 @@ class Scene():
         """Return a new command buffer that is associated to this scene.
 
         *New in version 1.1.*
+        *Deprecated since version 1.2:* Use *CommandBuffer(scene)* instead.
         """
 
         return CommandBuffer(self)
