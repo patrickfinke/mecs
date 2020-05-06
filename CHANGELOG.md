@@ -4,12 +4,15 @@ All notable changes to this project will be documented in this file. This projec
 
 - **unreleased**
 
-  - Add support for multiple components/component types to `scene.add()`, `scene.has()`, and `scene.remove()` aswell as `CommandBuffer.add()` and `CommandBuffer.remove()`. This does not only lead to shorter and more readable code, but can also improve performance.
+  - Add support for multiple components/component types to `scene.add()`, `scene.has()`, and `scene.remove()` aswell as `CommandBuffer.add()` and `CommandBuffer.remove()`.
   - Add `scene.collect()` to retrieve more than one component at once.
+  - Add `scene.set()` for adding and overwriting components.
   - Add support for adding components directly when allocating a new entity id with `scene.new()`.
   - Add `CommandBuffer.new()` as the counterpart to `scene.new()`.
   - Add informative messages to exceptions.
   - Refactor for minor performance increase.
+  - Deprecate `scene.add()` in favour of `scene.set()`.
+  - Deprecate `scene.buffer()` in favour of `CommandBuffer(scene)`.
   - Fix a typo in `test.py`.
 
 - **v1.1.0 - Add command buffer**
