@@ -20,6 +20,10 @@ Inspired by [Esper](https://github.com/benmoran56/esper) and Sean Fisk's [ecs](h
 
 For a full list of changes see [CHANGELOG.md](CHANGELOG.md).
 
+- **v1.2.0 - Add support for manipulating multiple components at once**
+
+  The methods `scene.new()`, `scene.set()`, `scene.has()`, and `scene.remove()` (where `set()` replaces `add()`) now support multiple components/component types. The appropriate methods have also been modified in the `CommandBuffer`. `scene.get()` now has a conterpart `scene.collect()` which supports multiple component types. Minor changes include better exception messages and `scene.buffer()` being deprecated in favour of `CommandBuffer(scene)`.
+
 - **v1.1.0 - Add command buffer**
 
   When using `scene.select()`, manipulation of entities can now be recorded using the `CommandBuffer` instance returned by `scene.buffer()`, and played back at a later time. This avoids unexpected behavior that would occur when using the scene instance directly.
@@ -54,6 +58,7 @@ For the management of entities, components and systems, `mecs` provides the `Sce
 ```python
 scene = Scene()
 ```
+
 <a name="mecs-entities"/>
 
 ### Managing entities
@@ -76,15 +81,17 @@ class Position():
     self.x, self.y = x, y
 ```
 
-Another example would be a similar `Velocity` component.
+Other examples would be a similar `Velocity` component or a `Renderable` component:
 
 ```python
 class Velocity():
   def __init__(self, vx, vy):
     self.vx, self.vy = vx, vy
-```
 
-Note that while these have almost the same structure, replacing both by a more general `TwoValues` component would not be a good idea. `Position` and `Velocity` describe different properties of an object and thus should be kept explicitely separate.
+class Renderable():
+  def __init__(self, textureId):
+    self.textureId = textureId
+```
 
 Components are distinguished by their **component type**. To get the type of a component use the build-in `type()`:
 
@@ -92,66 +99,122 @@ Components are distinguished by their **component type**. To get the type of a c
 position = Position(15, 8)
 type(position)
 # => <class '__main__.Position'>
+
+velocity = Velocity(8, 15)
+type(velocity)
+# => <class '__main__.Velocity'>
 ```
 
 \
 \
 The `Scene` class provides the following methods for interacting with entities and components. Note that the entity id used in these methods must be valid, i.e. must be returned from `scene.new()`. Using an invalid entity id results in a `KeyError`.
 
-#### 1. Add components using `scene.add(eid, comp)`.
+#### 1. Setting components while allocating a new entity id using `scene.new(*comps)`.
 
-This also returns the component.
+Returns a valid entity id to be used in other methods. It is also possible to directly set components of the new entity by supplying them to this method.
 
 ```python
-scene.add(eid, position)
-# => <__main__.Position object at 0x000001EF033E3160>
+ # create a new empty entity
+eid = scene.new()
+# => 0
+
+# create a new entity with a Position, Velocity and Renderable component
+anotherEid = scene.new(Position(15, 8), Velocity(8, 15), Renderable(7))
+# => 1
 ```
 
-Entities can only have one component of a type. Tying to add another component of the same type results in a `ValueError`. Note that the same component instance can be added to multiple entities, making them share the component data.
+#### 2. Setting components using `scene.set(eid, *comps)`.
 
-#### 2. Check if a component is part of an entity using `scene.has(eid, comptype)`.
+Set components of an entity, which can either result in adding a component or overwriting an existing component. Note that an entity is only allowed to have one component of each type.
 
 ```python
+# Add a new Position component
+scene.set(eid, Position(1, 2))
+
+# Overwrite the Position component
+scene.set(eid, Position(3, 4))
+
+# Add a Velocity component and overwrite the Position component again
+scene.set(eid, Velocity(0, -5), Position(5, 6))
+```
+
+Setting components of the same type in a single call to `set()` is illegal and results in a `ValueError`. Note that the same component instance can be added to multiple entities, making them share the component data.
+
+#### 3. Check if components are part of an entity using `scene.has(eid, *comptypes)`.
+
+This method returns `True` if the entity does have components of all the specified types, `False` otherwise.
+
+```python
+# check for Position component (the entity has one)
 scene.has(eid, Position)
 # => True
-scene.has(eid, Velocity)
+
+# check for Position and Velocity (the entity has both)
+scene.has(eid, Position, Velocity)
+# => True
+
+# check for Position and Renderable (the entity has a Position but is lacking the Renderable component)
+scene.has(eid, Position, Renderable)
 # => False
 ```
 
-#### 3. Modifying components using `scene.get(eid, comptype)`.
+#### 4. Getting single components using `scene.get(eid, comptype)`.
 
-This returns the component.
+Returns the entities component of the specified type, allowing the view or edit the component data.
 
 ```python
-pos = scene.get(eid, Position)
-pos.x += 1
+# move the entity by 10 units on the x-axis
+position = scene.get(eid, Position)
+position.x += 10
+
+# stop the entity by setting its velocity to zero
+velocity = scene.get(eid, Velocity)
+velocity.vx, velocity.vy = 0, 0
 ```
 
-Tying to get a component type that was not previously added to an entity results in a `ValueError`.
+Raises `ValueError` if the entity is missing a component of the specified type.
 
-#### 4. Removing components using `scene.remove(eid, comptype)`.
+#### 5. Getting multiple components at once using `scene.collect(eid, *comptypes)`.
 
-This also returns the component.
+Returns a list of the entities components of the specified types.
 
 ```python
-scene.remove(eid, Position)
-# => <__main__.Position object at 0x000001EF033E3160>
+# repeat the example from above
+position, velocity = scene.collect(eid, Position, Velocity)
+position.x += 10
+velocity.vx, velocity.vy = 0, 0
 ```
 
-#### 5. Removing all components from an entity using `scene.free(eid)`.
+Raises `ValueError` if the entity is missing one or more components of the specified types.
 
-This also returns a list of the components.
+#### 6. Removing components using `scene.remove(eid, *comptype)`.
+
+Removes the components of the entity that are of the specified types.
 
 ```python
-scene.add(eid, Position())
-scene.add(eid, Velocity())
+# remove the Position and the Velocity component
+scene.remove(eid, Position, Velocity)
+```
+
+Raises `ValueError` if the entity is missing one or more components of the specified types.
+
+#### 7. Removing all components from an entity using `scene.free(eid)`.
+
+Removes all components of the entity.
+
+```python
+scene.add(eid, Position(0, 0))
+scene.add(eid, Velocity(0, 0))
+
 scene.free(eid)
-# => [<__main__.Position object at 0x000001EF0358D370>, <__main__.Velocity object at 0x000001EF035B47C0>]
+
+scene.has(eid, Position) or scene.has(eid, Velocity) or scene.has(eid, Renderable)
+# => False
 ```
 
 Note that this does not make the entity id invalid. In fact, there is no way to invalidate a once valid id. In particular, there is no method to check if an entity is still 'alive'. If you need such behavior, consider attaching an `Alive` component (that has no further data) to every entity that needs it and use `scene.has(eid, Alive)` to determine if the entity is alive.
 
-#### 6. Viewing the archetype of an entity and all of its components using `scene.archetype(eid)` and `scene.components(eid)`.
+#### 8. Viewing the archetype of an entity and all of its components using `scene.archetype(eid)` and `scene.components(eid)`.
 
 The **archetype** of an entity is the tuple of all component types that are attached to it.
 
@@ -166,29 +229,33 @@ scene.components(eid)
 
 The result of `scene.archetype(eid)` is sorted, so comparisons of the form `scene.archetype(eid1) == scene.archetype(eid2)` are safe, but hardly necessary.
 
-#### 7. Iterating over entities and components using `scene.select(*comptypes, exclude=None)`.
+#### 9. Iterating over entities and components using `scene.select(*comptypes, exclude=None)`.
 
 The result of this method is a generator object yielding tuples of the form `(eid, (compA, compB, ...))` where `compA`, `compB` belong to the entity with entity id `eid` and have the requested types. Optionally, an iterable (such as a list or tuple) may be passed to the `exclude` argument, in which case all entities having one or more component types listed in `exclude` will not be yielded by the method.
 
-It is *very important* to note, that between the creation and exhaustion of the generator it is *not* save to use the `scene.add()`, `scene.remove()`, and `scene.free()` methods, as these will alter the structure of the underlying database. Using these methods while iterating over the generator does not raise any exceptions, but will often lead to unexpected behavior! To resolve this issue, `mecs` provides the `CommandBuffer` class, which implements `CommandBuffer.add(eid, comp)`, `CommandBuffer.remove(eid, comptype)`, and `CommandBuffer.free(eid)`. The command buffer will record any calls to these methods, and when it is save to do so, the recordings can be played back to the scene by calling `CommandBuffer.flush()`. Alternatively, the command buffer can be used as a context manager, which is strongly recommended. To get a new `CommandBuffer` instance associated to the scene use `scene.buffer()`.
-
 ```python
-# adjust position based on velocity
+# adjust positions based on velocity
 dt = current_deltatime()
 for eid, (pos, vel) in scene.select(Position, Velocity):
   pos.x += vel.vx * dt
   pos.y += vel.vy * dt
-
-# play sounds, remove them if they ended
-with scene.buffer() as buffer:
-  for eid, (sound,) in scene.select(Sound):
-    if not sound.isPlaying():
-      sound.play()
-    elif sound.hasEnded():
-      buffer.remove(eid, Sound)
 ```
 
 Iterating over entities that have a certain set of components is one of the most important tasks in the ECS paradigm. Usually, this is done by systems to efficiently apply their logic to the appropriate entities. For more examples, see the section about systems.
+
+#### 10. Staying save using the `CommandBuffer`.
+
+Methods such as `scene.new()`, `scene.set()`, `scene.remove()`, or `scene.free()` alter the structure of the underlying database of the scene. This makes them *not save* to use while iterating over the result of `scene.select()`. Using them in this context *will not* raise any exceptions, but will often lead to unexpected behaviour.
+
+To resolve this issue, `mecs` provides the `CommandBuffer` class, which implements `CommandBuffer.new(*comps)`, `CommandBuffer.set(eid, *comps)`, `CommandBuffer.remove(eid, *comptypes)`, and `CommandBuffer.free(eid)`. Any calls to these methods will be recorded, and when it is save to do so, can be played back using `CommandBuffer.flush()`. Alternatively, the command buffer can be used as a context manager, which is strongly recommended.
+
+```python
+# remove all entities from the scene that are not withing the screen bounds
+with CommandBuffer(scene) as buffer:
+  for eid, (pos,) in scene.select(Position):
+   if pos.x < 0 or pos.x > screen_width or pos.y < 0 or pos.y > screen_height:
+     buffer.free(eid)
+```
 
 <a name="mecs-systems"/>
 
@@ -265,12 +332,12 @@ As with `scene.start()` this method should *not* be called multiple times, but i
 When trying to write the main loop of your program you may use this pattern.
 
 ```python
-# Your system instances go here. Be sure to use the same instances
-# in different lists if one of your systems implements more than one
-# of the init, update or destroy methods.
-startSystems = []
-updateSystems = []
-stopSystems = []
+# Your system instances go here.
+systems = []
+
+startSystems = [s for s in systems if hasattr(s, 'onStart')]
+updateSystems = [s for s in systems if hasattr(s, 'onUpdate')]
+stopSystems = [s for s in systems if hasattr(s, 'onStop')]
 
 print("[Press Ctrl+C to stop]")
 try:
