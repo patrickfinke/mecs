@@ -27,6 +27,8 @@ def benchmark(name, restarts=10, metric=mean, ndigits=4, setup=None):
         return wrapper
     return timer
 
+class Alive(): pass
+
 class Position():
     def __init__(self, x=0.0, y=0.0):
         self.x, self.y = x, y
@@ -39,13 +41,19 @@ class Lifetime():
     def __init__(self, timer=1.0):
         self.timer = timer
 
-def mecs_setup(hparams):
+def mecs_setup_empty(hparams):
+    scene = Scene()
+    for _ in range(hparams.count):
+        scene.new(Alive())
+    return scene
+
+def mecs_setup_full(hparams):
     scene = Scene()
     for _ in range(hparams.count):
         position = Position(random.random() * 200 - 100, random.random() * 200 - 100)
         velocity = Velocity(random.random() * 200 - 100, random.random() * 200 - 100)
         lifetime = Lifetime(random.random() * 10 + 5)
-        scene.new(Position(random.random()), Velocity(), Lifetime())
+        scene.new(Alive(), position, velocity, lifetime)
     return scene
 
 @benchmark("mecs/create entities/0 components")
@@ -68,25 +76,64 @@ def mecs_create_entities_three_components(scene, hparams):
     for _ in range(hparams.count):
         scene.new(Position(), Velocity(), Lifetime())
 
-@benchmark("mecs/query/all entities", setup=mecs_setup)
+@benchmark("mecs/query/all entities", setup=mecs_setup_full)
 def mecs_query_all_entities(scene, hparams):
     for _ in scene.select():
         pass
 
-@benchmark("mecs/query/1 component", setup=mecs_setup)
+@benchmark("mecs/query/1 component", setup=mecs_setup_full)
 def mecs_query_one_component(scene, hparams):
     for _ in scene.select(Position):
         pass
 
-@benchmark("mecs/query/2 components", setup=mecs_setup)
+@benchmark("mecs/query/2 components", setup=mecs_setup_full)
 def mecs_query_two_components(scene, hparams):
     for _ in scene.select(Position, Velocity):
         pass
 
-@benchmark("mecs/query/3 components", setup=mecs_setup)
+@benchmark("mecs/query/3 components", setup=mecs_setup_full)
 def mecs_query_three_components(scene, hparams):
     for _ in scene.select(Position, Velocity, Lifetime):
         pass
+
+@benchmark("mecs/add/1 component", setup=mecs_setup_empty)
+def mecs_add_one_component(scene, hparams):
+    with CommandBuffer(scene) as buffer:
+        for eid, _ in scene.select(Alive):
+            buffer.set(eid, Position())
+
+@benchmark("mecs/add/2 components", setup=mecs_setup_empty)
+def mecs_add_two_components(scene, hparams):
+    with CommandBuffer(scene) as buffer:
+        for eid, _ in scene.select(Alive):
+            buffer.set(eid, Position(), Velocity())
+
+
+@benchmark("mecs/add/3 components", setup=mecs_setup_empty)
+def mecs_add_three_components(scene, hparams):
+    with CommandBuffer(scene) as buffer:
+        for eid, _ in scene.select(Alive):
+            buffer.set(eid, Position(), Velocity(), Lifetime())
+
+@benchmark("mecs/overwrite/1 component", setup=mecs_setup_full)
+def mecs_overwrite_one_component(scene, hparams):
+    with CommandBuffer(scene) as buffer:
+        for eid, _ in scene.select(Alive):
+            buffer.set(eid, Position())
+
+@benchmark("mecs/overwrite/2 components", setup=mecs_setup_full)
+def mecs_overwrite_two_components(scene, hparams):
+    with CommandBuffer(scene) as buffer:
+        for eid, _ in scene.select(Alive):
+            buffer.set(eid, Position(), Velocity())
+
+
+@benchmark("mecs/overwrite/3 components", setup=mecs_setup_full)
+def mecs_overwrite_three_components(scene, hparams):
+    with CommandBuffer(scene) as buffer:
+        for eid, _ in scene.select(Alive):
+            buffer.set(eid, Position(), Velocity(), Lifetime())
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -102,7 +149,13 @@ def main():
         mecs_query_all_entities,
         mecs_query_one_component,
         mecs_query_two_components,
-        mecs_query_three_components
+        mecs_query_three_components,
+        mecs_add_one_component,
+        mecs_add_two_components,
+        mecs_add_three_components,
+        mecs_overwrite_one_component,
+        mecs_overwrite_two_components,
+        mecs_overwrite_three_components
     ]
 
     for f in functions:
