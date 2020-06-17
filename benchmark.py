@@ -87,8 +87,8 @@ def mecs_setup_mixed(hparams):
         eids.append(eid)
 
         position = Position(random.random() * 200 - 100, random.random() * 200 - 100)
-        lifetime = Lifetime(random.random() * 10 + 5)
-        eid = scene.new(position, lifetime)
+        velocity = Velocity(random.random() * 200 - 100, random.random() * 200 - 100)
+        eid = scene.new(position, velocity)
         eids.append(eid)
     return scene, eids
 
@@ -307,7 +307,7 @@ def esper_setup_full(hparams):
 def esper_setup_mixed(hparams):
     world = esper.World()
     eids = []
-    for _ in range(hparams.count):
+    for _ in range(hparams.count // 2):
         position = Position(random.random() * 200 - 100, random.random() * 200 - 100)
         velocity = Velocity(random.random() * 200 - 100, random.random() * 200 - 100)
         lifetime = Lifetime(random.random() * 10 - 5)
@@ -315,8 +315,8 @@ def esper_setup_mixed(hparams):
         eids.append(eid)
 
         position = Position(random.random() * 200 - 100, random.random() * 200 - 100)
-        lifetime = Lifetime(random.random() * 10 - 5)
-        eid = world.create_entity(position, lifetime)
+        velocity = Velocity(random.random() * 200 - 100, random.random() * 200 - 100)
+        eid = world.create_entity(position, velocity)
         eids.append(eid)
     return world, eids
 
