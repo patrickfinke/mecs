@@ -4,8 +4,8 @@ All notable changes to this project will be documented in this file. This projec
 
 - **unreleased**
 
-- Other changes:
-  - Add benchmarks.
+  - Other changes:
+    - Add benchmarks.
 
 - **v1.2.0 - manipulating multiple components at once**
 
