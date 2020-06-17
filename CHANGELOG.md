@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file. This projec
 
 - **unreleased**
   - Improve performance of `scene.select()`.
+  - Improve performance of internal methods (improving overall performance).
 
   - Other changes:
     - Add benchmarks.

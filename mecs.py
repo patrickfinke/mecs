@@ -88,9 +88,9 @@ class Scene():
         self.lasteid = -1 # the last valid entity id
 
     def _getArchetype(self, comptypelist):
-        """Internal method to get the unique (in memory) archetype tuple that corresponds to the passed list of component types. No component type must appear more than once."""
+        """Internal method to get the unique (in memory) archetype that corresponds to the passed list of component types. No component type must appear more than once."""
 
-        newarchetype = tuple(sorted(comptypelist, key = lambda ct: id(ct)))
+        newarchetype = frozenset(comptypelist)
         if newarchetype not in self.chunkmap:
             return newarchetype
         return next(iter(x for x in self.chunkmap if x == newarchetype)) # find in cache
@@ -237,7 +237,7 @@ class Scene():
 
         archetype, _, _, _ = self._unpackEntity(eid)
 
-        return archetype
+        return tuple(archetype)
 
 
     def add(self, eid, *comps):
