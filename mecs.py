@@ -91,7 +91,6 @@ class Scene():
         """Internal method to get the unique (in memory) archetype that corresponds to the passed list of component types. No component type must appear more than once."""
 
         newarchetype = frozenset(comptypelist)
-        #newarchetype = tuple(sorted(comptypelist, key = lambda ct: id(ct)))
         if newarchetype not in self.chunkmap:
             return newarchetype
         return next(iter(x for x in self.chunkmap if x == newarchetype)) # find in cache
