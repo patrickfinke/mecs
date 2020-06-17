@@ -302,14 +302,21 @@ class Scene():
             comptypes = list(compdict.keys())
             raise ValueError(f"duplicate component type(s): {', '.join(str(ct) for ct in comptypes if comptypes.count(ct) > 1)}")
 
-        # merge with old components, newer ones taking precedence
+        # Modify entity if already presend, else ...
         if eid in self.entitymap:
             _, index, _, comptypemap = self._unpackEntity(eid)
-            compdict = {**{comptype: comptypemap[comptype][index] for comptype in comptypemap}, **compdict}
+            oldcompdict = {ct: comptypemap[ct][index] for ct in comptypemap}
 
-            self._removeEntity(eid)
-
-        self._addEntity(eid, compdict.values())
+            # If possible update components directly, else ...
+            if compdict.keys() <= oldcompdict.keys():
+                for ct, c in compdict.items():
+                    comptypemap[ct][index] = c
+            else: # ... move entity in into another chunk.
+                newcompdict = {**oldcompdict, **compdict}
+                self._removeEntity(eid)
+                self._addEntity(eid, newcompdict.values())
+        else: # ... add entity.
+            self._addEntity(eid, compdict.values())
 
     def has(self, eid, *comptypes):
         """Return *True* if the entity has a component of each of the given types, *False* otherwise. Raises *KeyError* if the entity id is not valid or *ValueError* if no component type is supplied to the method.
