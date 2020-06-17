@@ -345,21 +345,23 @@ class Scene():
         if eid < 0 or eid > self.lasteid:
             raise KeyError(f"invalid entity id: {eid}")
 
-        # yield from empty generator if no components are requested
+        # return empty list if no components are requested
         if not comptypes:
             return []
 
-        # raise ValueError if the entity does not have any components
-        if eid not in self.entitymap:
+        # unpack entity
+        try:
+            archetype, index = self.entitymap[eid]
+            _, comptypemap = self.chunkmap[archetype]
+        except KeyError: # eid not in self.entitymap
             raise ValueError(f"missing component type(s): {', '.join(str(ct) for ct in comptypes)}")
 
-        _, index, _, comptypemap = self._unpackEntity(eid)
-
-        # raise ValueError if the entity does not have the requested component types
-        if not all(ct in comptypemap for ct in comptypes):
+        # collect and return components
+        try:
+            return [comptypemap[ct][index] for ct in comptypes]
+        except KeyError: # ct not in comptypemap
             raise ValueError(f"missing component type(s): {', '.join(str(ct) for ct in comptypes if ct not in comptypemap)}")
 
-        return [comptypemap[ct][index] for ct in comptypes]
 
     def get(self, eid, comptype):
         """Get one component of an entity. Returns the component. Raises *KeyError* if the entity id is not valid or *ValueError* if the entity does not have a component of the requested type."""
