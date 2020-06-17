@@ -9,6 +9,8 @@ All notable changes to this project will be documented in this file. This projec
   - Improve performance of `scene.collect()`.
   - Improve performance of `scene.remove()`.
   - Improve performance of `scene.has()`.
+  - Improve performance of `scene.components()`.
+  - Improve performance of `scene.archetype()`.
   - Improve performance of internal methods (improving overall performance).
 
   - Other changes:

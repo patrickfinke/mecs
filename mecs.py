@@ -202,7 +202,6 @@ class Scene():
 
         return components
 
-
     def components(self, eid):
         """Returns a tuple of all components of an entity. Raises *KeyError* if the entity id is not valid."""
 
@@ -210,14 +209,14 @@ class Scene():
         if eid < 0 or eid > self.lasteid:
             raise KeyError(f"invalid entity id: {eid}")
 
-        # entity has no components
-        if eid not in self.entitymap:
+        # unpack entity
+        try:
+            archetype, index = self.entitymap[eid]
+            _, comptypemap = self.chunkmap[archetype]
+        except KeyError: # eid not in self.entitymap
             return ()
 
-        _, index, _, comptypemap = self._unpackEntity(eid)
-
         return tuple(comptypemap[comptype][index] for comptype in comptypemap)
-
 
     def archetype(self, eid):
         """Returns the archetype of an entity. Raises *KeyError* if the entity id is not valid."""
@@ -226,14 +225,13 @@ class Scene():
         if eid < 0 or eid > self.lasteid:
             raise KeyError(f"invalid entity id: {eid}")
 
-        # entity has no components
-        if eid not in self.entitymap:
+        # unpack entity
+        try:
+            archetype, _ = self.entitymap[eid]
+        except KeyError: # eid not in self.entitymap
             return ()
 
-        archetype, _, _, _ = self._unpackEntity(eid)
-
         return tuple(archetype)
-
 
     def add(self, eid, *comps):
         """Add components to an entity. Returns the component(s) as a list if two or more components are given, or a single component instance if only one component is given. Raises *KeyError* if the entity id is not valid or *ValueError* if the entity would have one or more components of the same type after this operation or no components are supplied to the method.
