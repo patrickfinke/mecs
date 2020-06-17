@@ -124,10 +124,10 @@ class Scene():
 
         del self.entitymap[eid]
 
-    def _addEntity(self, eid, complist):
+    def _addEntity(self, eid, compdict):
         """Internal method to add an entity. The entity id must be valid and the component list must be non-empty. Also, there must be a maximum of one component of each type."""
 
-        archetype = frozenset(type(c) for c in complist)
+        archetype = frozenset(compdict.keys())
         if archetype in self.chunkmap: # collect unique instance from cache, if possible
             archetype = next(iter(x for x in self.chunkmap if x == archetype))
 
@@ -145,8 +145,8 @@ class Scene():
         # add the entity and components to the archetype container
         eidlist, comptypemap = self.chunkmap[archetype]
         eidlist.append(eid)
-        for c in complist:
-            comptypemap[type(c)].append(c)
+        for ct, c in compdict.items():
+            comptypemap[ct].append(c)
 
         # make reference to entity in entitymap
         index = len(eidlist) - 1
@@ -172,12 +172,14 @@ class Scene():
 
         # add components
         if comps:
+            compdict = {type(c): c for c in comps}
+
             # raise ValueError on trying to add duplicate component types
-            if len(set(type(comp) for comp in comps)) < len(comps):
+            if len(compdict) < len(comps):
                 comptypes = [type(comp) for comp in comps]
                 raise ValueError(f"adding duplicate component type(s): {', '.join(str(ct) for ct in comptypes if comptypes.count(ct) > 1)}")
 
-            self._addEntity(self.lasteid, comps)
+            self._addEntity(self.lasteid, compdict)
 
         return self.lasteid
 
@@ -265,7 +267,8 @@ class Scene():
             complist.extend(comptypemap[comptype][index] for comptype in comptypemap)
             self._removeEntity(eid)
 
-        self._addEntity(eid, complist)
+        compdict = {type(c): c for c in complist}
+        self._addEntity(eid, compdict)
 
         if len(comps) == 1:
             return comps[0]
@@ -306,9 +309,9 @@ class Scene():
             else: # ... move entity in into another chunk.
                 newcompdict = {**oldcompdict, **compdict}
                 self._removeEntity(eid)
-                self._addEntity(eid, newcompdict.values())
+                self._addEntity(eid, newcompdict)
         else: # ... add entity.
-            self._addEntity(eid, compdict.values())
+            self._addEntity(eid, compdict)
 
     def has(self, eid, *comptypes):
         """Return *True* if the entity has a component of each of the given types, *False* otherwise. Raises *KeyError* if the entity id is not valid or *ValueError* if no component type is supplied to the method.
@@ -402,13 +405,13 @@ class Scene():
             raise ValueError(f"missing component type(s): {', '.join(str(ct) for ct in comptypes if ct not in comptypemap)}")
 
         # collect components that will remain on the entity and the ones to be removed
-        remaining = list(comptypemap[ct][index] for ct in comptypemap if ct not in comptypes)
+        compdict = {ct: comptypemap[ct][index] for ct in comptypemap if ct not in comptypes}
         removed = list(comptypemap[ct][index] for ct in comptypes)
 
         # remove the entity and add it back if there are remaining components
         self._removeEntity(eid)
-        if remaining:
-            self._addEntity(eid, remaining)
+        if compdict:
+            self._addEntity(eid, compdict)
 
         if len(removed) == 1:
             return removed[0]
