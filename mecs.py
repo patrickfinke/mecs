@@ -87,14 +87,6 @@ class Scene():
         self.chunkmap = {} # {archetype: ([eid], {component type: [component]})}
         self.lasteid = -1 # the last valid entity id
 
-    def _getArchetype(self, comptypelist):
-        """Internal method to get the unique (in memory) archetype that corresponds to the passed list of component types. No component type must appear more than once."""
-
-        newarchetype = frozenset(comptypelist)
-        if newarchetype not in self.chunkmap:
-            return newarchetype
-        return next(iter(x for x in self.chunkmap if x == newarchetype)) # find in cache
-
     def _unpackEntity(self, eid):
         """Internal method to unpack the data of an entity. The entity id must be valid and in entitymap, i.e. the entity must have at least one component."""
 
@@ -135,8 +127,9 @@ class Scene():
     def _addEntity(self, eid, complist):
         """Internal method to add an entity. The entity id must be valid and the component list must be non-empty. Also, there must be a maximum of one component of each type."""
 
-        # calculate new archetype
-        archetype = self._getArchetype((type(comp) for comp in complist))
+        archetype = frozenset(type(c) for c in complist)
+        if archetype in self.chunkmap: # collect unique instance from cache, if possible
+            archetype = next(iter(x for x in self.chunkmap if x == archetype))
 
         # if there is no container for the new archetype, create one
         if archetype not in self.chunkmap:
