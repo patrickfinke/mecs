@@ -327,11 +327,6 @@ class Scene():
         if not comptypes:
             raise ValueError("missing input")
 
-        # entity has no components
-        #if eid not in self.entitymap:
-        #    return False
-
-        #_, _, _, comptypemap = self._unpackEntity(eid)
         # unpack entity
         try:
             archetype, _ = self.entitymap[eid]
