@@ -1,5 +1,7 @@
 """An implementation of the Entity Component System (ECS) paradigm."""
 
+from itertools import repeat as _repeat
+
 __version__ = '1.2.0'
 
 class CommandBuffer():
@@ -446,13 +448,12 @@ class Scene():
 
         # iterate over all included archetype that are not excluded
         archetypes = incarchetypes - excarchetypes
-        for archetype in archetypes:
-            eidlist, comptypemap = self.chunkmap[archetype]
-            # yield in the right format
-            if comptypes:
+        if comptypes:
+            for archetype in archetypes:
+                eidlist, comptypemap = self.chunkmap[archetype]
                 complists = [comptypemap[ct] for ct in comptypes]
-                for eid, comps in zip(eidlist, zip(*complists)):
-                    yield eid, comps
-            else:
-                for eid in eidlist:
-                    yield eid, ()
+                yield from zip(eidlist, zip(*complists))
+        else:
+            for archetype in archetypes:
+                eidlist, _ = self.chunkmap[archetype]
+                yield from zip(eidlist, _repeat(()))
