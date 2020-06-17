@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file. This projec
   - Improve performance of `scene.set()`, in the case where the component type is already present and the component will be replaced.
   - Improve performance of `scene.get()`.
   - Improve performance of `scene.collect()`.
+  - Improve performance of `scene.remove()`.
   - Improve performance of internal methods (improving overall performance).
 
   - Other changes:
