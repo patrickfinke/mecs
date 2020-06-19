@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - **unreleased**
+
   - Improve performance of `scene.select()`.
   - Improve performance of `scene.set()`, in the case where the component type is already present and the component will be replaced.
   - Improve performance of `scene.get()`.
@@ -12,7 +13,6 @@ All notable changes to this project will be documented in this file. This projec
   - Improve performance of `scene.components()`.
   - Improve performance of `scene.archetype()`.
   - Improve performance of internal methods (improving overall performance).
-
   - Other changes:
     - Add benchmarks.
 
