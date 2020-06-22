@@ -183,12 +183,12 @@ class Scene():
         if eid < 0 or eid > self.lasteid:
             raise KeyError(f"invalid entity id: {eid}")
 
-        # entity has no components
-        if eid not in self.entitymap:
+        # unpack entity
+        try:
+            archetype, index = self.entitymap[eid]
+            _, comptypemap = self.chunkmap[archetype]
+        except KeyError: # eid not in self.entitymap
             return []
-
-        archetype, index = self.entitymap[eid]
-        _, comptypemap = self.chunkmap[archetype]
 
         # collect the components and remove the entity
         components = [comptypemap[comptype][index] for comptype in comptypemap]
