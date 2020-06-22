@@ -87,18 +87,11 @@ class Scene():
         self.chunkmap = {} # {archetype: ([eid], {component type: [component]})}
         self.lasteid = -1 # the last valid entity id
 
-    def _unpackEntity(self, eid):
-        """Internal method to unpack the data of an entity. The entity id must be valid and in entitymap, i.e. the entity must have at least one component."""
-
-        archetype, index = self.entitymap[eid]
-        eidlist, comptypemap = self.chunkmap[archetype]
-
-        return archetype, index, eidlist, comptypemap
-
     def _removeEntity(self, eid):
         """Internal method to remove an entity. The entity id must be valid and in entitymap, i.e. the entity must have at least one component."""
 
-        archetype, index, eidlist, comptypemap = self._unpackEntity(eid)
+        archetype, index = self.entitymap[eid]
+        eidlist, comptypemap = self.chunkmap[archetype]
 
         # remove the entity by swapping it with another entity, or ...
         if len(eidlist) > 1:
@@ -194,7 +187,8 @@ class Scene():
         if eid not in self.entitymap:
             return []
 
-        _, index, _, comptypemap = self._unpackEntity(eid)
+        archetype, index = self.entitymap[eid]
+        _, comptypemap = self.chunkmap[archetype]
 
         # collect the components and remove the entity
         components = [comptypemap[comptype][index] for comptype in comptypemap]
@@ -255,7 +249,8 @@ class Scene():
 
         complist = list(comps)
         if eid in self.entitymap:
-            _, index, _, comptypemap = self._unpackEntity(eid)
+            archetype, index = self.entitymap[eid]
+            _, comptypemap = self.chunkmap[archetype]
 
             # raise ValueError if trying to add component types that are already present
             if any(type(comp) in comptypemap for comp in comps):
@@ -297,7 +292,9 @@ class Scene():
 
         # Modify entity if already presend, else ...
         if eid in self.entitymap:
-            _, index, _, comptypemap = self._unpackEntity(eid)
+            archetype, index = self.entitymap[eid]
+            _, comptypemap = self.chunkmap[archetype]
+
             oldcompdict = {ct: comptypemap[ct][index] for ct in comptypemap}
 
             # If possible update components directly, else ...
