@@ -450,13 +450,14 @@ class Scene():
         excarchetypes = set.union(*[self.archetypemap.get(ct, set()) for ct in exclude]) if exclude else set()
 
         # iterate over all included archetype that are not excluded
+        # the iteration is reversed, because this will yield better performance when calling e.g. scene.remove() on the result.
         archetypes = incarchetypes - excarchetypes
         if comptypes:
             for archetype in archetypes:
                 eidlist, comptypemap = self.chunkmap[archetype]
-                complists = [comptypemap[ct] for ct in comptypes]
-                yield from zip(eidlist, zip(*complists))
+                complists = [reversed(comptypemap[ct]) for ct in comptypes]
+                yield from zip(reversed(eidlist), zip(*complists))
         else:
             for archetype in archetypes:
                 eidlist, _ = self.chunkmap[archetype]
-                yield from zip(eidlist, _repeat(()))
+                yield from zip(reversed(eidlist), _repeat(()))

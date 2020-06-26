@@ -183,10 +183,40 @@ def mecs_remove_ABCDE(setup, hparams):
     for eid in eids:
         scene.remove(eid, A, B, C, D, E)
 
+def mecs_query_remove_A(setup, hparams):
+    scene, _ = setup
+    with CommandBuffer(scene) as buffer:
+        for eid, _ in scene.select(A):
+            buffer.remove(eid, A)
+
+def mecs_query_remove_ABC(setup, hparams):
+    scene, _ = setup
+    with CommandBuffer(scene) as buffer:
+        for eid, _ in scene.select(A, B, C):
+            buffer.remove(eid, A, B, C)
+
 def mecs_destroy(setup, hparams):
     scene, eids = setup
     for eid in eids:
         scene.free(eid)
+
+def mecs_query_destroy_all(setup, hparams):
+    scene, eids = setup
+    with CommandBuffer(scene) as buffer:
+        for eid, _ in scene.select():
+            buffer.free(eid)
+
+def mecs_query_destroy_A(setup, hparams):
+    scene, eids = setup
+    with CommandBuffer(scene) as buffer:
+        for eid, _ in scene.select(A):
+            buffer.free(eid)
+
+def mecs_query_destroy_ABC(setup, hparams):
+    scene, eids = setup
+    with CommandBuffer(scene) as buffer:
+        for eid, _ in scene.select(A, B, C):
+            buffer.free(eid)
 
 def mecs_archetype(setup, hparams):
     scene, eids = setup
@@ -426,10 +456,15 @@ def main():
         (mecs_backend,  "remove",     "A",     mecs_setup_ABCDE,  mecs_remove_A),
         (mecs_backend,  "remove",     "ABC",   mecs_setup_ABCDE,  mecs_remove_ABC),
         (mecs_backend,  "remove",     "ABCDE", mecs_setup_ABCDE,  mecs_remove_ABCDE),
+        (mecs_backend,  "query_remove",     "A", mecs_setup_ABCDE,  mecs_query_remove_A),
+        (mecs_backend,  "query_remove",     "ABC", mecs_setup_ABCDE,  mecs_query_remove_ABC),
         (mecs_backend,  "destroy",    "empty", mecs_setup_empty,  mecs_destroy),
         (mecs_backend,  "destroy",    "A",     mecs_setup_A,      mecs_destroy),
         (mecs_backend,  "destroy",    "ABC",   mecs_setup_ABC,    mecs_destroy),
         (mecs_backend,  "destroy",    "ABCDE", mecs_setup_ABCDE,  mecs_destroy),
+        (mecs_backend,  "query_destroy",    "all", mecs_setup_ABCDE,  mecs_query_destroy_all),
+        (mecs_backend,  "query_destroy",    "A", mecs_setup_ABCDE,  mecs_query_destroy_A),
+        (mecs_backend,  "query_destroy",    "ABC", mecs_setup_ABCDE,  mecs_query_destroy_ABC),
         (mecs_backend,  "archetype",  "",      mecs_setup,        mecs_archetype),
         (mecs_backend,  "components", "",      mecs_setup,        mecs_components),
 
