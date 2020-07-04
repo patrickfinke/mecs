@@ -2,17 +2,9 @@
 
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-- **unreleased**
+- v1.2.1 - Improve performance
 
-  - Improve performance of `scene.select()`.
-  - Improve performance of `scene.set()`, in the case where the component type is already present and the component will be replaced.
-  - Improve performance of `scene.get()`.
-  - Improve performance of `scene.collect()`.
-  - Improve performance of `scene.remove()`.
-  - Improve performance of `scene.free()`.
-  - Improve performance of `scene.has()`.
-  - Improve performance of `scene.components()`.
-  - Improve performance of `scene.archetype()`.
+  - Improve performance of `Scene.select()`, `Scene.get()`, `Scene.collect()`, `Scene.remove()`, `Scene.free()`, `Scene.has()`, `Scene.components()`, and `Scene.archetype()`. Improve performance of `Scene.set()` in the case where the component type is already present and the component will be replaced.
   - Improve performance of internal methods (improving overall performance).
   - Other changes:
     - Add benchmarks.

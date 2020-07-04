@@ -20,6 +20,8 @@ Inspired by [Esper](https://github.com/benmoran56/esper) and Sean Fisk's [ecs](h
 
 For a full list of changes see [CHANGELOG.md](CHANGELOG.md).
 
+- v1.2.1 - Improve performance
+
 - **v1.2.0 - Add support for manipulating multiple components at once**
 
   The methods `scene.new()`, `scene.set()`, `scene.has()`, and `scene.remove()` (where `set()` replaces `add()`) now support multiple components/component types. The appropriate methods have also been modified in the `CommandBuffer`. `scene.get()` now has a conterpart `scene.collect()` which supports multiple component types. Minor changes include better exception messages and `scene.buffer()` being deprecated in favour of `CommandBuffer(scene)`.

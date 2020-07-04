@@ -2,7 +2,7 @@
 
 from itertools import repeat as _repeat
 
-__version__ = '1.2.0'
+__version__ = '1.2.1'
 
 class CommandBuffer():
     """A buffer that stores commands and plays them back later.
