@@ -203,8 +203,8 @@ Raises `ValueError` if the entity is missing one or more components of the speci
 Removes all components of the entity.
 
 ```python
-scene.add(eid, Position(0, 0))
-scene.add(eid, Velocity(0, 0))
+scene.set(eid, Position(0, 0))
+scene.set(eid, Velocity(0, 0))
 
 scene.free(eid)
 
@@ -219,8 +219,8 @@ Note that this does not make the entity id invalid. In fact, there is no way to 
 The **archetype** of an entity is the tuple of all component types that are attached to it.
 
 ```python
-scene.add(eid, Position(32, 64))
-scene.add(eid, Velocity(8, 16))
+scene.set(eid, Position(32, 64))
+scene.set(eid, Velocity(8, 16))
 scene.archetype(eid)
 # => (<class '__main__.Position'>, <class '__main__.Velocity'>)
 scene.components(eid)
