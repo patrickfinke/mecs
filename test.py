@@ -1,5 +1,5 @@
 import unittest
-from mecs import Scene
+from mecs import Scene, CommandBuffer
 
 class ComponentA():
     def __init__(self, a):
@@ -56,22 +56,58 @@ class CommandBufferTestCase(unittest.TestCase):
         self.scene = Scene()
         self.componentA = ComponentA(0)
         self.componentB = ComponentB(0)
+        self.componentA1 = ComponentA(0)
+        self.componentA2 = ComponentA(1)
 
     def test_new(self):
-        with self.scene.buffer() as buffer:
-            eid = buffer.new(self.componentA)
+        with CommandBuffer(self.scene) as buffer:
+            eid1 = buffer.new(self.componentA)
+            eid2 = buffer.new(self.componentB)
+
+        self.assertEqual(self.scene.get(eid1, ComponentA), self.componentA)
+        self.assertEqual(self.scene.get(eid2, ComponentB), self.componentB)
+
+    def test_add(self):
+        with CommandBuffer(self.scene) as buffer:
+            eid1 = buffer.new()
             eid2 = buffer.new()
+            buffer.add(eid1, self.componentA)
             buffer.add(eid2, self.componentB)
 
-        seen = False
-        for eid, (compA,) in self.scene.select(ComponentA):
-            seen = self.scene.has(eid, ComponentA)
-        self.assertTrue(seen)
+        self.assertTrue(self.scene.has(eid1, ComponentA))
+        self.assertTrue(self.scene.has(eid2, ComponentB))
 
-        seen = False
-        for eid, (compB,) in self.scene.select(ComponentB):
-            seen = self.scene.has(eid, ComponentB)
-        self.assertTrue(seen)
+    def test_set(self):
+        eid = self.scene.new()
+
+        with CommandBuffer(self.scene) as buffer:
+            buffer.set(eid, self.componentA1)
+
+        self.assertEqual(self.scene.get(eid, ComponentA), self.componentA1)
+
+        with CommandBuffer(self.scene) as buffer:
+            buffer.set(eid, self.componentA2)
+
+        self.assertEqual(self.scene.get(eid, ComponentA), self.componentA2)
+
+    def test_remove(self):
+        eid = self.scene.new(self.componentA)
+        self.assertTrue(self.scene.has(eid, ComponentA))
+
+        with CommandBuffer(self.scene) as buffer:
+            buffer.remove(eid, ComponentA)
+
+        self.assertFalse(self.scene.has(eid, ComponentA))
+
+    def test_free(self):
+        eid = self.scene.new(self.componentA, self.componentB)
+        self.assertTrue(self.scene.has(eid, ComponentA, ComponentB))
+
+        with CommandBuffer(self.scene) as buffer:
+            buffer.free(eid)
+
+        self.assertFalse(self.scene.has(eid, ComponentA))
+        self.assertFalse(self.scene.has(eid, ComponentB))
 
 class SceneTestCase(unittest.TestCase):
     def setUp(self):

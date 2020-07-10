@@ -15,8 +15,7 @@ class CommandBuffer():
         """Associate the buffer with the provided scene."""
         self.scene = scene
         self.commands = []
-        self.lasteid = 0
-        self.eidmap = {}
+        self.eids = scene.eids
 
     def __enter__(self):
         return self
@@ -30,10 +29,10 @@ class CommandBuffer():
         *New in version 1.2.*
         """
 
-        self.lasteid -= 1
-        self.commands.append((self.scene.new, (self.lasteid, *comps,)))
+        eid = next(self.eids)
+        self.commands.append((self.scene.set, (eid, *comps,)))
 
-        return self.lasteid
+        return eid
 
     def add(self, eid, *comps):
         """Add a component to an entity. The component will not be added immediately, but when the buffer is flushed. In particular, exceptions do not occur when calling this method, but only when the buffer is flushed.
@@ -69,14 +68,7 @@ class CommandBuffer():
         """Flush the buffer. This will apply all commands that have been previously stored in the buffer to its associated scene. If any arguments in these commands are faulty, exceptions may arrise."""
 
         for cmd, args in self.commands:
-            if cmd == self.scene.new:
-                eid, *comps = args
-                realeid = self.scene.new(*comps)
-                self.eidmap[eid] = realeid
-            else:
-                eid, *other = args
-                if eid < 0: eid = self.eidmap[eid]
-                cmd(eid, *other)
+            cmd(*args)
         self.commands.clear()
 
 class Scene():
