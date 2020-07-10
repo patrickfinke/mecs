@@ -1,6 +1,7 @@
 """An implementation of the Entity Component System (ECS) paradigm."""
 
 from itertools import repeat as _repeat
+from itertools import count as _count
 
 __version__ = '1.2.1'
 
@@ -85,7 +86,7 @@ class Scene():
         self.entitymap = {} # {eid: (archetype, index)}
         self.archetypemap = {} # {component type: set(archetype)}
         self.chunkmap = {} # {archetype: ([eid], {component type: [component]})}
-        self.lasteid = -1 # the last valid entity id
+        self.eids = _count() # eid generator
 
     def _removeEntity(self, eid):
         """Internal method to remove an entity. The entity id must be valid and in entitymap, i.e. the entity must have at least one component."""
@@ -160,8 +161,8 @@ class Scene():
         *Changed in version 1.2:* Added the optional *comps* parameter.
         """
 
-        # increment valid entity id
-        self.lasteid += 1
+        # generate eid
+        eid = next(self.eids)
 
         # add components
         if comps:
@@ -172,16 +173,12 @@ class Scene():
                 comptypes = [type(comp) for comp in comps]
                 raise ValueError(f"adding duplicate component type(s): {', '.join(str(ct) for ct in comptypes if comptypes.count(ct) > 1)}")
 
-            self._addEntity(self.lasteid, compdict)
+            self._addEntity(eid, compdict)
 
-        return self.lasteid
+        return eid
 
     def free(self, eid):
         """Remove all components of an entity. The entity id will not be invalidated by this operation. Returns a list of the components. Raises *KeyError* if the entity id is not valid."""
-
-        # raise KeyError on invalid entity id
-        if eid < 0 or eid > self.lasteid:
-            raise KeyError(f"invalid entity id: {eid}")
 
         # unpack entity
         try:
@@ -199,10 +196,6 @@ class Scene():
     def components(self, eid):
         """Returns a tuple of all components of an entity. Raises *KeyError* if the entity id is not valid."""
 
-        # raise KeyError on invalid entity id
-        if eid < 0 or eid > self.lasteid:
-            raise KeyError(f"invalid entity id: {eid}")
-
         # unpack entity
         try:
             archetype, index = self.entitymap[eid]
@@ -214,10 +207,6 @@ class Scene():
 
     def archetype(self, eid):
         """Returns the archetype of an entity. Raises *KeyError* if the entity id is not valid."""
-
-        # raise KeyError on invalid entity id
-        if eid < 0 or eid > self.lasteid:
-            raise KeyError(f"invalid entity id: {eid}")
 
         # unpack entity
         try:
@@ -233,10 +222,6 @@ class Scene():
         *Changed in version 1.2:* Added support for multiple components.
         *Deprecated since version 1.2:* Use *set()* instead.
         """
-
-        # raise KeyError on invalid entity id
-        if eid < 0 or eid > self.lasteid:
-            raise KeyError(f"invalid entity id: {eid}")
 
         # raise ValueError if no component are given
         if not comps:
@@ -274,10 +259,6 @@ class Scene():
         *New in version 1.2.*
         """
 
-        # raise KeyError on invalid entity id
-        if eid < 0 or eid > self.lasteid:
-            raise KeyError(f"invalid entity id: {eid}")
-
         # skip if no components are given
         if not comps:
             return
@@ -314,10 +295,6 @@ class Scene():
         *Changed in version 1.2:* Added support for multiple component types.
         """
 
-        # raise KeyError on invalid entity id
-        if eid < 0 or eid > self.lasteid:
-            raise KeyError(f"invalid entity id: {eid}")
-
         # raise ValueError if no component types are given
         if not comptypes:
             raise ValueError("missing input")
@@ -336,10 +313,6 @@ class Scene():
 
         *New in version 1.2.*
         """
-
-        # raise KeyError on invalid entity id
-        if eid < 0 or eid > self.lasteid:
-            raise KeyError(f"invalid entity id: {eid}")
 
         # return empty list if no components are requested
         if not comptypes:
@@ -362,10 +335,6 @@ class Scene():
     def get(self, eid, comptype):
         """Get one component of an entity. Returns the component. Raises *KeyError* if the entity id is not valid or *ValueError* if the entity does not have a component of the requested type."""
 
-        # raise KeyError on invalid entity id
-        if eid < 0 or eid > self.lasteid:
-            raise KeyError(f"invalid entity id: {eid}")
-
         # unpack entity
         try:
             archetype, index = self.entitymap[eid]
@@ -384,10 +353,6 @@ class Scene():
 
         *Changed in version 1.2:* Added support for multiple component types.
         """
-
-        # raise KeyError on invalid entity id
-        if eid < 0 or eid > self.lasteid:
-            raise KeyError(f"invalid entity id: {eid}")
 
         # raise ValueError if no component types are given
         if not comptypes:

@@ -92,9 +92,6 @@ class SceneTestCase(unittest.TestCase):
         self.systemB = SystemB()
         self.systemAnotB = SystemAnotB()
 
-        self.invalideid = 100
-        self.negativeeid = -1
-
     def test_new_A(self):
         # new entity id
         used = []
@@ -147,11 +144,6 @@ class SceneTestCase(unittest.TestCase):
         self.assertFalse(self.scene.has(self.eid, ComponentB))
         self.assertTrue(len(result) == 0)
 
-    def test_free_XA(self):
-        # KeyError
-        self.assertRaises(KeyError, self.scene.free, self.invalideid)
-        self.assertRaises(KeyError, self.scene.free, self.negativeeid)
-
     def test_components_A(self):
         # case has components
         self.scene.add(self.eid, self.componentA)
@@ -172,11 +164,6 @@ class SceneTestCase(unittest.TestCase):
         result = self.scene.components(self.eid)
         self.assertTrue(len(result) == 0)
 
-    def test_components_XA(self):
-        # KeyError
-        self.assertRaises(KeyError, self.scene.components, self.invalideid)
-        self.assertRaises(KeyError, self.scene.components, self.negativeeid)
-
     def test_archetype_A(self):
         # case has components
         self.scene.add(self.eid, self.componentA)
@@ -196,11 +183,6 @@ class SceneTestCase(unittest.TestCase):
 
         result = self.scene.archetype(self.eid)
         self.assertTrue(len(result) == 0)
-
-    def test_archetype_XA(self):
-        # KeyError
-        self.assertRaises(KeyError, self.scene.archetype, self.invalideid)
-        self.assertRaises(KeyError, self.scene.archetype, self.negativeeid)
 
     def test_add_A(self):
         # return value, single component
@@ -271,15 +253,6 @@ class SceneTestCase(unittest.TestCase):
         self.assertTrue(ComponentA in result)
         self.assertTrue(ComponentB in result)
 
-    def test_add_XA(self):
-        # KeyError
-        self.assertRaises(KeyError, self.scene.add, self.invalideid, self.componentA)
-        self.assertRaises(KeyError, self.scene.add, self.invalideid, self.componentA, self.componentB)
-        self.assertRaises(KeyError, self.scene.add, self.invalideid, self.componentB, self.componentA)
-        self.assertRaises(KeyError, self.scene.add, self.negativeeid, self.componentA)
-        self.assertRaises(KeyError, self.scene.add, self.negativeeid, self.componentA, self.componentB)
-        self.assertRaises(KeyError, self.scene.add, self.negativeeid, self.componentB, self.componentA)
-
     def test_add_XB(self):
         # ValueError
         self.scene.add(self.eid, self.componentA1)
@@ -307,20 +280,6 @@ class SceneTestCase(unittest.TestCase):
         self.assertTrue(self.scene.has(self.eid, ComponentA, ComponentB))
         self.assertEqual(self.scene.get(self.eid, ComponentA), self.componentA2)
         self.assertEqual(self.scene.get(self.eid, ComponentB), self.componentB2)
-
-    def test_set_XA(self):
-        # KeyError
-        self.scene.set(self.eid, self.componentA)
-        self.assertTrue(self.scene.has(self.eid, ComponentA))
-
-        self.assertRaises(KeyError, self.scene.set, self.invalideid)
-        self.assertRaises(KeyError, self.scene.set, self.invalideid, self.componentA)
-        self.assertRaises(KeyError, self.scene.set, self.invalideid, self.componentB)
-        self.assertRaises(KeyError, self.scene.set, self.invalideid, self.componentA, self.componentB)
-        self.assertRaises(KeyError, self.scene.set, self.negativeeid)
-        self.assertRaises(KeyError, self.scene.set, self.negativeeid, self.componentA)
-        self.assertRaises(KeyError, self.scene.set, self.negativeeid, self.componentB)
-        self.assertRaises(KeyError, self.scene.set, self.negativeeid, self.componentA, self.componentB)
 
     def test_set_XB(self):
         # ValueError
@@ -360,11 +319,6 @@ class SceneTestCase(unittest.TestCase):
         self.assertTrue(self.scene.has(self.eid, ComponentA, ComponentB))
         self.assertTrue(self.scene.has(self.eid, ComponentB, ComponentA))
 
-    def test_has_XA(self):
-        # KeyError
-        self.assertRaises(KeyError, self.scene.has, self.invalideid, ComponentA)
-        self.assertRaises(KeyError, self.scene.has, self.negativeeid, ComponentA)
-
     def test_has_XB(self):
         # ValueError
         self.assertRaises(ValueError, self.scene.has, self.eid)
@@ -392,17 +346,6 @@ class SceneTestCase(unittest.TestCase):
         self.assertEqual(list(self.scene.collect(self.eid, ComponentB)), [self.componentB])
         self.assertEqual(list(self.scene.collect(self.eid, ComponentA, ComponentB)), [self.componentA, self.componentB])
         self.assertEqual(list(self.scene.collect(self.eid, ComponentB, ComponentA)), [self.componentB, self.componentA])
-
-    def test_collect_XA(self):
-        # KeyError
-        self.assertRaises(KeyError, self.scene.collect, 99999, ComponentA)
-        self.assertRaises(KeyError, self.scene.collect, self.invalideid, ComponentB)
-        self.assertRaises(KeyError, self.scene.collect, self.invalideid, ComponentA, ComponentB)
-        self.assertRaises(KeyError, self.scene.collect, self.invalideid, ComponentB, ComponentA)
-        self.assertRaises(KeyError, self.scene.collect, self.negativeeid, ComponentA)
-        self.assertRaises(KeyError, self.scene.collect, self.negativeeid, ComponentB)
-        self.assertRaises(KeyError, self.scene.collect, self.negativeeid, ComponentA, ComponentB)
-        self.assertRaises(KeyError, self.scene.collect, self.negativeeid, ComponentB, ComponentA)
 
     def test_collect_XB(self):
         # ValueError, case no components
@@ -435,16 +378,6 @@ class SceneTestCase(unittest.TestCase):
         resultB = self.scene.get(self.eid, ComponentB)
         self.assertEqual(resultA, self.componentA)
         self.assertEqual(resultB, self.componentB)
-
-    def test_get_XA(self):
-        # KeyError
-        self.scene.add(self.eid, self.componentA)
-        self.assertTrue(self.scene.has(self.eid, ComponentA))
-
-        self.assertRaises(KeyError, self.scene.get, self.invalideid, ComponentA)
-        self.assertRaises(KeyError, self.scene.get, self.invalideid, ComponentB)
-        self.assertRaises(KeyError, self.scene.get, self.negativeeid, ComponentA)
-        self.assertRaises(KeyError, self.scene.get, self.negativeeid, ComponentB)
 
     def test_get_XB(self):
         # ValueError
@@ -547,11 +480,6 @@ class SceneTestCase(unittest.TestCase):
         self.scene.remove(self.eid, ComponentA, ComponentB)
         result = self.scene.archetype(self.eid)
         self.assertEqual(result, ())
-
-    def test_remove_XA(self):
-        # KeyError
-        self.assertRaises(KeyError, self.scene.remove, self.invalideid, ComponentA)
-        self.assertRaises(KeyError, self.scene.remove, self.negativeeid, ComponentA)
 
     def test_remove_XB(self):
         # ValueError, case no components
