@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+- **unreleased**
+
+  - Entity IDs returned by `CommandBuffer.new()` are now also valid withing the corresponding `Scene` instance.
+  - All entity IDs are now considered valid, thus no method will raise a `KeyError` on invalid entity ID. It is left to the user to only use those entity IDs that have been returned by `Scene.new()` or `CommandBuffer.new()`.
+
 - v1.2.1 - Improve performance
 
   - Improve performance of `Scene.select()`, `Scene.get()`, `Scene.collect()`, `Scene.remove()`, `Scene.free()`, `Scene.has()`, `Scene.components()`, and `Scene.archetype()`. Improve performance of `Scene.set()` in the case where the component type is already present and the component will be replaced.
