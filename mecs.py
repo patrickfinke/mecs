@@ -114,8 +114,6 @@ class Scene():
         """Internal method to add an entity. The entity id must be valid and the component list must be non-empty. Also, there must be a maximum of one component of each type."""
 
         archetype = frozenset(compdict.keys())
-        if archetype in self.chunkmap: # collect unique instance from cache, if possible
-            archetype = next(iter(x for x in self.chunkmap if x == archetype))
 
         # if there is no container for the new archetype, create one
         if archetype not in self.chunkmap:

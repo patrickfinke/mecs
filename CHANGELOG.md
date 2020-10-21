@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file. This projec
 
   - Entity IDs returned by `CommandBuffer.new()` are now also valid withing the corresponding `Scene` instance.
   - All entity IDs are now considered valid, thus no method will raise a `KeyError` on invalid entity ID. It is left to the user to only use those entity IDs that have been returned by `Scene.new()` or `CommandBuffer.new()`.
+  - Improve performance of internal methods (improving overall performance).
 
 - v1.2.1 - Improve performance
 
