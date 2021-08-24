@@ -320,6 +320,7 @@ class Scene():
         """Return *True* if the entity has a component of each of the given types, *False* otherwise. Raises *KeyError* if the entity id is not valid or *ValueError* if no component type is supplied to the method.
 
         *Changed in version 1.2:* Added support for multiple component types.
+        *Deprecated since version 1.3:* Use *match()* instead.
         """
 
         # raise ValueError if no component types are given
