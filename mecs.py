@@ -1,7 +1,7 @@
 """An implementation of the Entity Component System (ECS) paradigm."""
 
+from uuid import uuid4 as _generate_new_eid
 from itertools import repeat as _repeat
-from itertools import count as _count
 
 __version__ = '1.2.1'
 
@@ -15,7 +15,6 @@ class CommandBuffer():
         """Associate the buffer with the provided scene."""
         self.scene = scene
         self.commands = []
-        self.eids = scene.eids
 
     def __enter__(self):
         return self
@@ -29,7 +28,7 @@ class CommandBuffer():
         *New in version 1.2.*
         """
 
-        eid = next(self.eids)
+        eid = _generate_new_eid()
         self.commands.append((self.scene.set, (eid, *comps,)))
 
         return eid
@@ -78,7 +77,6 @@ class Scene():
         self.entitymap = {} # {eid: (archetype, index)}
         self.archetypemap = {} # {component type: set(archetype)}
         self.chunkmap = {} # {archetype: ([eid], {component type: [component]})}
-        self.eids = _count() # eid generator
 
     def _removeEntity(self, eid):
         """Internal method to remove an entity. The entity id must be valid and in entitymap, i.e. the entity must have at least one component."""
@@ -152,7 +150,7 @@ class Scene():
         """
 
         # generate eid
-        eid = next(self.eids)
+        eid = _generate_new_eid()
 
         # add components
         if comps:
