@@ -335,6 +335,19 @@ class Scene():
 
         return all(ct in comptypemap for ct in comptypes)
 
+    def match(self, eid, filter):
+        """Return *True* if the archetype of the entity matches the filter, *False* otherwise.
+
+        *New in version 1.3.*
+        """
+
+        try:
+            archetype, _ = self.entitymap[eid]
+        except KeyError: # eid not in self.entitymap
+            return False
+
+        return filter._match(archetype)
+
     def collect(self, eid, *comptypes):
         """Collect multiple components of an entity. Returns a list of the components. Raises *KeyError* if the entity id is not valid or *ValueError* if a component of any of the requested types is missing.
 
