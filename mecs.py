@@ -5,6 +5,45 @@ from itertools import repeat as _repeat
 
 __version__ = '1.2.1'
 
+class Filter():
+    """A filter that can be matched against signatures.
+
+    *New in version 1.3.*
+    """
+
+    def __init__(self, filter_function):
+        self._match = filter_function
+
+    def __and__(self, other):
+        f = lambda signature: self._match(signature) and other._match(signature)
+        return Filter(f)
+
+    def __or__(self, other):
+        f = lambda signature: self._match(signature) or other._match(signature)
+        return Filter(f)
+
+    def __invert__(self):
+        f = lambda signature: not self._match(signature)
+        return Filter(f)
+
+class ComponentMeta(type, Filter):
+    """Metaclass for components.
+
+    *New in version 1.3.*
+    """
+
+    def __init__(self, *args, **kwargs):
+        f = lambda signature: self in signature
+        Filter.__init__(self, f)
+
+class Component(metaclass=ComponentMeta):
+    """Base class from which all components must inherit.
+
+    *New in version 1.3.*
+    """
+
+    pass
+
 class CommandBuffer():
     """A buffer that stores commands and plays them back later.
 
