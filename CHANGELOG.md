@@ -2,11 +2,10 @@
 
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-- **unreleased**
+- **v1.3 - Filter and Views**
 
-  - Entity IDs returned by `CommandBuffer.new()` are now also valid withing the corresponding `Scene` instance.
+  - Entity IDs are now random UUIDs. In particular, IDs returned by `CommandBuffer.new()` are valid withing the corresponding `Scene` instance.
   - All entity IDs are now considered valid, thus no method will raise a `KeyError` on invalid entity ID. It is left to the user to only use those entity IDs that have been returned by `Scene.new()` or `CommandBuffer.new()`.
-  - Improve performance of internal methods (improving overall performance).
 
 - v1.2.1 - Improve performance
 
