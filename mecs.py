@@ -11,20 +11,24 @@ class Filter():
     *New in version 1.3.*
     """
 
-    def __init__(self, filter_function):
-        self._match = filter_function
+    def __init__(self, single_filter, group_filter):
+        self._single_filter = single_filter
+        self._group_filter = group_filter
 
     def __and__(self, other):
-        f = lambda signature: self._match(signature) and other._match(signature)
-        return Filter(f)
+        single_filter = lambda signature: self._single_filter(signature) and other._single_filter(signature)
+        group_filter = lambda archetypemap: self._group_filter(archetypemap) & other._group_filter(archetypemap)
+        return Filter(single_filter, group_filter)
 
     def __or__(self, other):
-        f = lambda signature: self._match(signature) or other._match(signature)
-        return Filter(f)
+        singled_filter = lambda signature: self._single_filter(signature) or other._single_filter(signature)
+        group_filter = lambda archetypemap: self._group_filter(archetypemap) | other._group_filter(archetypemap)
+        return Filter(singled_filter, group_filter)
 
     def __invert__(self):
-        f = lambda signature: not self._match(signature)
-        return Filter(f)
+        singled_filter = lambda signature: not self._single_filter(signature)
+        group_filter = lambda archetypemap: set.union(*archetypemap.values()) - self._group_filter(archetypemap)
+        return Filter(singled_filter, group_filter)
 
 class ComponentMeta(type, Filter):
     """Metaclass for components.
@@ -33,8 +37,9 @@ class ComponentMeta(type, Filter):
     """
 
     def __init__(self, *args, **kwargs):
-        f = lambda signature: self in signature
-        Filter.__init__(self, f)
+        single_filter = lambda signature: self in signature
+        group_filter = lambda archetypemap: archetypemap.get(self, set())
+        Filter.__init__(self, single_filter, group_filter)
 
 class Component(metaclass=ComponentMeta):
     """Base class from which all components must inherit.
@@ -347,7 +352,7 @@ class Scene():
         except KeyError: # eid not in self.entitymap
             return False
 
-        return filter._match(archetype)
+        return filter._single_filter(archetype)
 
     def collect(self, eid, *comptypes):
         """Collect multiple components of an entity. Returns a list of the components. Raises *KeyError* if the entity id is not valid or *ValueError* if a component of any of the requested types is missing.
