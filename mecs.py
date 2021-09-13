@@ -83,7 +83,8 @@ class _Container():
             component_list[index] = component
 
 class Filter():
-    """A filter that can be matched against signatures.
+    """
+    A filter that can be matched against signatures.
 
     *New in version 1.3.*
     """
@@ -108,7 +109,8 @@ class Filter():
         return Filter(singled_filter, group_filter)
 
 class ComponentMeta(type, Filter):
-    """Metaclass for components.
+    """
+    Metaclass for components.
 
     *New in version 1.3.*
     """
@@ -119,7 +121,8 @@ class ComponentMeta(type, Filter):
         Filter.__init__(self, single_filter, group_filter)
 
 class Component(metaclass=ComponentMeta):
-    """Base class from which all components must inherit.
+    """
+    Base class from which all components must inherit.
 
     *New in version 1.3.*
     """
@@ -127,13 +130,17 @@ class Component(metaclass=ComponentMeta):
     pass
 
 class CommandBuffer():
-    """A buffer that stores commands and plays them back later.
+    """
+    A buffer that stores commands and plays them back later.
 
     *New in version 1.1.*
     """
 
     def __init__(self, scene):
-        """Associate the buffer with the provided scene."""
+        """
+        Associate the buffer with the provided scene.
+        """
+
         self.scene = scene
         self.commands = []
 
@@ -144,7 +151,8 @@ class CommandBuffer():
         self.flush()
 
     def new(self, *comps):
-        """Returns an entity id that is only valid to use with the current buffer. If one or more components are supplied to the method, these will be added to the new entity.
+        """
+        Returns an entity id that is only valid to use with the current buffer. If one or more components are supplied to the method, these will be added to the new entity.
 
         *New in version 1.2.*
         """
@@ -155,7 +163,10 @@ class CommandBuffer():
         
 
     def set(self, eid, *comps):
-        """Set components of an entity. The componentes will not be set immediately, but when the buffer is flushed. In particular, exception do not ossur when calling this method, but only when the buffer if flushed.
+        """
+        Set components of an entity.
+
+        The componentes will not be set immediately, but when the buffer is flushed. In particular, exception do not occur when calling this method, but only when the buffer if flushed.
 
         *New in version 1.2.*
         """
@@ -163,7 +174,10 @@ class CommandBuffer():
         self.commands.append((self.scene.set, (eid, *comps)))
 
     def remove(self, eid, *comptypes):
-        """Remove a component from an entity. The component will not be removed immediately, but when the buffer is flushed. In particular, exceptions do not occur when calling this method, but only when the buffer is flushed.
+        """
+        Remove a component from an entity.
+
+        The component will not be removed immediately, but when the buffer is flushed. In particular, exceptions do not occur when calling this method, but only when the buffer is flushed.
 
         *Changed in version 1.2:* Added support for multiple component types.
         """
@@ -171,19 +185,29 @@ class CommandBuffer():
         self.commands.append((self.scene.remove, (eid, *comptypes)))
 
     def free(self, eid):
-        """Remove all components of an entity. The components will not be removed immediately, but when the buffer if flushed. In particular, exceptions do not occur when calling this method, but only when the buffer is flushed."""
+        """
+        Remove all components of an entity.
+
+        The components will not be removed immediately, but when the buffer if flushed. In particular, exceptions do not occur when calling this method, but only when the buffer is flushed.
+        """
 
         self.commands.append((self.scene.free, (eid,)))
 
     def flush(self):
-        """Flush the buffer. This will apply all commands that have been previously stored in the buffer to its associated scene. If any arguments in these commands are faulty, exceptions may arrise."""
+        """
+        Flush the buffer.
+
+        This will apply all commands that have been previously stored in the buffer to its associated scene. If any arguments in these commands are faulty, exceptions may arrise.
+        """
 
         for cmd, args in self.commands:
             cmd(*args)
         self.commands.clear()
 
 class Scene():
-    """A scene of entities that allows for efficient component management."""
+    """
+    A scene of entities that allows for efficient component management.
+    """
 
     def __init__(self):
         self._entity_to_container = {} # {entity: container}
@@ -404,19 +428,30 @@ class Scene():
             return removed
 
     def start(self, *systems, **kwargs):
-        """Initialize the scene. All systems must implement an `onStart(scene, **kwargs)` method where this scene instance will be passed as the first argument and the `kwargs` of this method will also be passed on. The systems will be called in the same order they are supplied to this method."""
+        """
+        Initialize the scene.
+
+        All systems must implement an `onStart(scene, **kwargs)` method where this scene instance will be passed as the first argument and the `kwargs` of this method will also be passed on. The systems will be called in the same order they are supplied to this method.
+        """
 
         for system in systems:
             system.onStart(self, **kwargs)
 
     def update(self, *systems, **kwargs):
-        """Update the scene. All systems must implement an `onUpdate(scene, **kwargs)` method where this scene instance will be passed as the first argument and the `kwargs` of this method will also be passed on. The systems will be called in the same order they are supplied to this method."""
+        """
+        Update the scene.
+
+        All systems must implement an `onUpdate(scene, **kwargs)` method where this scene instance will be passed as the first argument and the `kwargs` of this method will also be passed on. The systems will be called in the same order they are supplied to this method.
+        """
 
         for system in systems:
             system.onUpdate(self, **kwargs)
 
     def stop(self, *systems, **kwargs):
-        """Clean up the scene. All systems must implement an 'onStop(scene, **kwargs)' method where this scene instance will be passed as the first argument and the `kwargs` of this method will also be passed on. The systems will be called in the same order they are supplied to this method."""
+        """Clean up the scene.
+
+        All systems must implement an 'onStop(scene, **kwargs)' method where this scene instance will be passed as the first argument and the `kwargs` of this method will also be passed on. The systems will be called in the same order they are supplied to this method.
+        """
 
         for system in systems:
             system.onStop(self, **kwargs)
