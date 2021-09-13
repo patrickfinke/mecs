@@ -246,24 +246,17 @@ class Scene():
         self.set(entity, *components)
         return entity
 
-    def free(self, eid):
-        """Remove all components of an entity. The entity id will not be invalidated by this operation. Returns a list of the components. Raises *KeyError* if the entity id is not valid."""
+    def free(self, entity):
+        """
+        Remove all components from an entity.
 
-        # unpack entity
-        try:
-            #archetype, index = self.entitymap[eid]
-            #_, comptypemap = self.chunkmap[archetype]
-            container = self._entity_to_container[eid]
-        except KeyError: # eid not in self.entitymap
-            return []
+        If the entity does not have any components this method does nothing.
 
-        # collect the components and remove the entity
-        #components = [comptypemap[comptype][index] for comptype in comptypemap]
-        components = list(container.component_dict(eid).values())
-        #self._removeEntity(eid)
-        self._remove_entity(eid)
+        *Changed in version 1.3:* Exit silently instead of raising *KeyError* and return `None` instead of the components.
+        """
 
-        return components
+        if entity in self._entity_to_container:
+            self._remove_entity(entity)
 
     def components(self, eid):
         """Returns a tuple of all components of an entity. Raises *KeyError* if the entity id is not valid."""
