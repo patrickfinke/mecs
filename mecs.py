@@ -288,41 +288,24 @@ class Scene():
         signature = container.signature
         return signature
 
-    def set(self, eid, *comps):
-        """Set components of an entity. Raises *KeyError* if the entity id is not valid or *ValueError* if trying to set two or more components of the same type simultaneously.
+    def set(self, entity, *components):
+        """
+        Set components of an entity.
+
+        If the entity already has a component of the same type it gets replaced, otherwise the component is added. If multiple components of the same type are passed, the last one prevails.
 
         *New in version 1.2.*
+        *Changed in version 1.3:* Does not raise *KeyError* or *ValueError* anymore.
         """
 
-        # skip if no components are given
-        if not comps:
+        if not components:
             return
 
-        # sort components by type
-        compdict = {type(comp): comp for comp in comps}
-
-        # raise ValueError if trying to set duplicate component types
-        if len(compdict) < len(comps):
-            comptypes = list(compdict.keys())
-            raise ValueError(f"duplicate component type(s): {', '.join(str(ct) for ct in comptypes if comptypes.count(ct) > 1)}")
-
-        # Modify entity if already presend, else ...
-        if eid in self.entitymap:
-            archetype, index = self.entitymap[eid]
-            _, comptypemap = self.chunkmap[archetype]
-
-            oldcompdict = {ct: comptypemap[ct][index] for ct in comptypemap}
-
-            # If possible update components directly, else ...
-            if compdict.keys() <= oldcompdict.keys():
-                for ct, c in compdict.items():
-                    comptypemap[ct][index] = c
-            else: # ... move entity in into another chunk.
-                newcompdict = {**oldcompdict, **compdict}
-                self._removeEntity(eid)
-                self._addEntity(eid, newcompdict)
-        else: # ... add entity.
-            self._addEntity(eid, compdict)
+        component_dict = {type(c): c for c in components}
+        if entity in self._entity_to_container:
+            self._update_entity(entity, component_dict)
+        else:
+            self._add_entity(entity, component_dict)
 
     def match(self, eid, filter):
         """Return *True* if the archetype of the entity matches the filter, *False* otherwise.
