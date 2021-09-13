@@ -368,22 +368,6 @@ class Scene():
 
         return component
 
-    def get(self, eid, comptype):
-        """Get one component of an entity. Returns the component. Raises *KeyError* if the entity id is not valid or *ValueError* if the entity does not have a component of the requested type."""
-
-        # unpack entity
-        try:
-            archetype, index = self.entitymap[eid]
-            _, comptypemap = self.chunkmap[archetype]
-        except KeyError: # eid not in self.entitymap
-            raise ValueError(f"missing component type: {str(comptype)}")
-
-        # collect and return component
-        try:
-            return comptypemap[comptype][index]
-        except KeyError: # comptype not in comptypemap
-            raise ValueError(f"missing component type: {str(comptype)}")
-
     def remove(self, eid, *comptypes):
         """Remove components from an entity. Returns a list of the components if two or more component types are given, or a single component instance if only one component type is given. Raises *KeyError* if the entity id is not valid or *ValueError* if the entity does not have a component of any of the given types or if no component types are supplied to the method.
 
