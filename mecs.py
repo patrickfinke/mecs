@@ -307,18 +307,22 @@ class Scene():
         else:
             self._add_entity(entity, component_dict)
 
-    def match(self, eid, filter):
-        """Return *True* if the archetype of the entity matches the filter, *False* otherwise.
+    def match(self, entity, filter):
+        """
+        Match the signature of an entity with a filter.
+
+        Return *True* if the signature of the entity matches the filter, *False* otherwise.
 
         *New in version 1.3.*
         """
 
         try:
-            archetype, _ = self.entitymap[eid]
-        except KeyError: # eid not in self.entitymap
-            return False
+            container = self._entity_to_container[entity]
+            signature = container.signature
+        except KeyError:
+            signature = frozensset()
 
-        return filter._single_filter(archetype)
+        return filter._single_filter(signature)
 
     def collect(self, eid, *comptypes):
         """Collect multiple components of an entity. Returns a list of the components. Raises *KeyError* if the entity id is not valid or *ValueError* if a component of any of the requested types is missing.
