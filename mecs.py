@@ -258,19 +258,20 @@ class Scene():
         if entity in self._entity_to_container:
             self._remove_entity(entity)
 
-    def components(self, eid):
-        """Returns a tuple of all components of an entity. Raises *KeyError* if the entity id is not valid."""
+    def components(self, entity):
+        """
+        Return a list of all components of an entity.
 
-        # unpack entity
+        *Changed in version 1.3:* Return `[]` instead of raising `KeyError` and return a list instead of a tuple.
+        """
+
         try:
-            #archetype, index = self.entitymap[eid]
-            #_, comptypemap = self.chunkmap[archetype]
-            container = self._entity_to_container[eid]
-        except KeyError: # eid not in self.entitymap
-            return ()
+            container = self._entity_to_container[entity]
+        except KeyError:
+            return []
 
-        #return tuple(comptypemap[comptype][index] for comptype in comptypemap)
-        components = list(container.component_dict(eid).values())
+        components = list(container.component_dict(entity).values())
+        return components
 
     def archetype(self, eid):
         """Returns the archetype of an entity. Raises *KeyError* if the entity id is not valid."""
