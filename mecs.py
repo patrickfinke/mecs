@@ -273,16 +273,20 @@ class Scene():
         components = list(container.component_dict(entity).values())
         return components
 
-    def archetype(self, eid):
-        """Returns the archetype of an entity. Raises *KeyError* if the entity id is not valid."""
+    def signature(self, entity):
+        """
+        Return the signature of an entity.
 
-        # unpack entity
+        *Changed in version 1.3:* Renamed from `archetype` and return a frozenset instead of a tuple.
+        """
+
         try:
-            archetype, _ = self.entitymap[eid]
-        except KeyError: # eid not in self.entitymap
-            return ()
+            container = self._entity_to_container[entity]
+        except KeyError:
+            return frozenset()
 
-        return tuple(archetype)
+        signature = container.signature
+        return signature
 
     def set(self, eid, *comps):
         """Set components of an entity. Raises *KeyError* if the entity id is not valid or *ValueError* if trying to set two or more components of the same type simultaneously.
