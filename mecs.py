@@ -5,6 +5,83 @@ from itertools import repeat as _repeat
 
 __version__ = '1.2.1'
 
+class _Container():
+    def __init__(self, signature):
+        self._signature = signature
+        self._entities = []
+        self._components = {ct: [] for ct in self._signature}
+        self._indices = {}
+
+    def __len__(self):
+        return len(self._entities)
+
+    def __iter__(self):
+        yield from self._entities
+
+    @property
+    def signature(self):
+        return self._signature
+
+    @property
+    def entities(self):
+        return self._entities
+
+    def component_list(self, component_type):
+        return self._components[component_type]
+
+    def add(self, entity, component_dict):
+        self._entities.append(entity)
+
+        for component_type, component in component_dict.items():
+            self._components[component_type].append(component)
+
+        index = len(self._entities) - 1
+        self._indices[entity] = index
+
+        return index
+
+    def _move(self, index_to, index_from):
+        self._entities[index_to] = self._entities[index_from]
+
+        for component_list in self._components.values():
+            component_list[index_to] = component_list[index_from]
+
+        entity_from = self._entities[index_from]
+        self._indices[entity_from] = index_to
+
+    def remove(self, entity):
+        index = self._indices[entity]
+
+        last_index = len(self._entities) - 1
+        if index != last_index:
+            moved_entity, moved_index_to = self._move(index, last_index)
+
+        self._entities.pop()
+
+        for component_list in self._components.values():
+            component_list.pop()
+
+        del self._indices[entity]
+
+    def component_dict(self, entity):
+        index = self._indices[entity]
+
+        component_dict = {ct: cl[index] for ct, cl in self._components.items()}
+        return component_dict
+
+    def component(self, entity, component_type):
+        index = self._indices[entity]
+        component_list = self._components[component_type]
+        component = component_list[index]
+        return component
+
+    def update(self, entity, component_dict):
+        index = self._indices[entity]
+
+        for component_type, component in component_dict.items():
+            component_list = self._components[component_type]
+            component_list[index] = component
+
 class Filter():
     """A filter that can be matched against signatures.
 
@@ -118,65 +195,51 @@ class Scene():
     """A scene of entities that allows for efficient component management."""
 
     def __init__(self):
-        self.entitymap = {} # {eid: (archetype, index)}
-        self.archetypemap = {} # {component type: set(archetype)}
-        self.chunkmap = {} # {archetype: ([eid], {component type: [component]})}
+        self._entity_to_container = {} # {entity: container}
+        self._ctype_to_container = {} # {component_type: container}
+        self._signature_to_container = {} # {signature: container}
 
-    def _removeEntity(self, eid):
-        """Internal method to remove an entity. The entity id must be valid and in entitymap, i.e. the entity must have at least one component."""
+    def _add_entity(self, entity, component_dict):
+        signature = frozenset(component_dict.keys())
 
-        archetype, index = self.entitymap[eid]
-        eidlist, comptypemap = self.chunkmap[archetype]
+        if not signature in self._signature_to_container:
+            container = _Container(signature)
 
-        # remove the entity by swapping it with another entity, or ...
-        if len(eidlist) > 1:
-            swapid = eidlist[-1]
-            if swapid != eid: # do not replace with self
-                self.entitymap[swapid] = (archetype, index)
+            self._signature_to_container[signature] = container
+            for component_type in signature:
+                self._ctype_to_container.setdefault(component_type, set()).add(container)
+        else:
+            container = self._signature_to_container[signature]
 
-                eidlist[index] = swapid
-                for complist in comptypemap.values():
-                    swapcomp = complist[-1]
-                    complist[index] = swapcomp
+        self._entity_to_container[entity] = container
+        container.add(entity, component_dict)
 
-            # remove swaped entity
-            eidlist.pop()
-            for complist in comptypemap.values():
-                complist.pop()
-        else: # ... if the archetype container will be empty after this, remove it
-            for ct in archetype:
-                self.archetypemap[ct].remove(archetype)
-                if not self.archetypemap[ct]:
-                    del self.archetypemap[ct]
-            del self.chunkmap[archetype]
+    def _remove_entity(self, entity):
+        container = self._entity_to_container[entity]
 
-        del self.entitymap[eid]
+        del self._entity_to_container[entity]
+        container.remove(entity)
 
-    def _addEntity(self, eid, compdict):
-        """Internal method to add an entity. The entity id must be valid and the component list must be non-empty. Also, there must be a maximum of one component of each type."""
+        if not container:
+            signature = container.signature
 
-        archetype = frozenset(compdict.keys())
+            del self._signature_to_container[signature]
+            for component_type in signature:
+                self._ctype_to_container[component_type].remove(container)
+                if not self._ctype_to_container[component_type]:
+                    del self._ctype_to_container[component_type]
 
-        # if there is no container for the new archetype, create one
-        if archetype not in self.chunkmap:
-            # add to chunkmap
-            self.chunkmap[archetype] = ([], {ct: [] for ct in archetype})
+    def _update_entity(self, entity, component_dict):
+        container = self._entity_to_container[entity]
+        signature = container.signature
 
-            # add to archetypemap
-            for ct in archetype:
-                if ct not in self.archetypemap:
-                    self.archetypemap[ct] = set()
-                self.archetypemap[ct].add(archetype)
-
-        # add the entity and components to the archetype container
-        eidlist, comptypemap = self.chunkmap[archetype]
-        eidlist.append(eid)
-        for ct, c in compdict.items():
-            comptypemap[ct].append(c)
-
-        # make reference to entity in entitymap
-        index = len(eidlist) - 1
-        self.entitymap[eid] = (archetype, index)
+        if component_dict.keys() <= signature:
+            container.update(entity, component_dict)
+        else:
+            entity_component_dict = container.component_dict(entity)
+            entity_component_dict.update(component_dict)
+            self._remove_entity(entity)
+            self._add_entity(entity, entity_component_dict)
 
     def buffer(self):
         """Return a new command buffer that is associated to this scene.
@@ -205,7 +268,7 @@ class Scene():
                 comptypes = [type(comp) for comp in comps]
                 raise ValueError(f"adding duplicate component type(s): {', '.join(str(ct) for ct in comptypes if comptypes.count(ct) > 1)}")
 
-            self._addEntity(eid, compdict)
+            self._add_entity(eid, compdict)
 
         return eid
 
@@ -214,14 +277,17 @@ class Scene():
 
         # unpack entity
         try:
-            archetype, index = self.entitymap[eid]
-            _, comptypemap = self.chunkmap[archetype]
+            #archetype, index = self.entitymap[eid]
+            #_, comptypemap = self.chunkmap[archetype]
+            container = self._entity_to_container[eid]
         except KeyError: # eid not in self.entitymap
             return []
 
         # collect the components and remove the entity
-        components = [comptypemap[comptype][index] for comptype in comptypemap]
-        self._removeEntity(eid)
+        #components = [comptypemap[comptype][index] for comptype in comptypemap]
+        components = list(container.component_dict(eid).values())
+        #self._removeEntity(eid)
+        self._remove_entity(eid)
 
         return components
 
@@ -230,12 +296,14 @@ class Scene():
 
         # unpack entity
         try:
-            archetype, index = self.entitymap[eid]
-            _, comptypemap = self.chunkmap[archetype]
+            #archetype, index = self.entitymap[eid]
+            #_, comptypemap = self.chunkmap[archetype]
+            container = self._entity_to_container[eid]
         except KeyError: # eid not in self.entitymap
             return ()
 
-        return tuple(comptypemap[comptype][index] for comptype in comptypemap)
+        #return tuple(comptypemap[comptype][index] for comptype in comptypemap)
+        components = list(container.component_dict(eid).values())
 
     def archetype(self, eid):
         """Returns the archetype of an entity. Raises *KeyError* if the entity id is not valid."""
@@ -377,7 +445,6 @@ class Scene():
         except KeyError: # ct not in comptypemap
             raise ValueError(f"missing component type(s): {', '.join(str(ct) for ct in comptypes if ct not in comptypemap)}")
 
-
     def get(self, eid, comptype):
         """Get one component of an entity. Returns the component. Raises *KeyError* if the entity id is not valid or *ValueError* if the entity does not have a component of the requested type."""
 
@@ -428,7 +495,6 @@ class Scene():
             return removed[0]
         else:
             return removed
-
 
     def start(self, *systems, **kwargs):
         """Initialize the scene. All systems must implement an `onStart(scene, **kwargs)` method where this scene instance will be passed as the first argument and the `kwargs` of this method will also be passed on. The systems will be called in the same order they are supplied to this method."""
