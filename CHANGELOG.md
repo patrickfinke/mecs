@@ -2,10 +2,18 @@
 
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-- **v1.3 - Filter and Views**
+- **v1.3 - Filters and Views**
 
   - Entity IDs are now random UUIDs. In particular, IDs returned by `CommandBuffer.new()` are valid withing the corresponding `Scene` instance.
   - All entity IDs are now considered valid, thus no method will raise a `KeyError` on invalid entity ID. It is left to the user to only use those entity IDs that have been returned by `Scene.new()` or `CommandBuffer.new()`.
+  - Removed deprecated methods `Scene.buffer()`, `Scene.add()`, `CommandBuffer.add()`
+  - Removed `Scene.has()`, use `Scene.match()` instead.
+  - Changed `Scene.new()` so that the last component of every type is added to the new entity instead of raising `ValueError`.
+  - Changed `Scene.free()` so that it does not raise `KeyError` anymore and returns `None` instead of the components instead of the components..
+  - Changed `Scene.components()` so that it does not raise `KeyError` anymore and returns a list instead of a tuple.
+  - Renamed `Scene.archetype()` to `Scene.signature()` and return a frozenset instead of a tuple.
+  - Changed `Scene.set()` so that it does not raise `KeyError` or `ValueError` anymore.
+  - Changed `Scene.get()` so that it does not raise `ValueError` anymore and does not raise `KeyError` on invalid entity id but on invalid component type.
 
 - v1.2.1 - Improve performance
 
