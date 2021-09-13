@@ -1,6 +1,6 @@
 """An implementation of the Entity Component System (ECS) paradigm."""
 
-from uuid import uuid4 as _generate_new_eid
+from uuid import uuid4 as _generate_new_entity_id
 from itertools import repeat as _repeat
 
 __version__ = '1.2.1'
@@ -232,27 +232,19 @@ class Scene():
             self._remove_entity(entity)
             self._add_entity(entity, entity_component_dict)
 
-    def new(self, *comps):
-        """Returns a valid and previously unused entity id. If one or more components are supplied to the method, these will be added to the new entity. Raises *ValueError* if trying to add duplicate component types.
+    def new(self, *components):
+        """
+        Generate a new entity id.
+
+        Generates a previously unused entity id and returns it. If any components are passed to this method, the last of every type will be added to the entity.
 
         *Changed in version 1.2:* Added the optional *comps* parameter.
+        *Changed in version 1.3:* Sets the last component of a type instead of raising *ValueError*.
         """
 
-        # generate eid
-        eid = _generate_new_eid()
-
-        # add components
-        if comps:
-            compdict = {type(c): c for c in comps}
-
-            # raise ValueError on trying to add duplicate component types
-            if len(compdict) < len(comps):
-                comptypes = [type(comp) for comp in comps]
-                raise ValueError(f"adding duplicate component type(s): {', '.join(str(ct) for ct in comptypes if comptypes.count(ct) > 1)}")
-
-            self._add_entity(eid, compdict)
-
-        return eid
+        entity = _generate_new_entity_id()
+        self.set(entity, *components)
+        return entity
 
     def free(self, eid):
         """Remove all components of an entity. The entity id will not be invalidated by this operation. Returns a list of the components. Raises *KeyError* if the entity id is not valid."""
