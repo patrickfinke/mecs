@@ -152,16 +152,7 @@ class CommandBuffer():
         eid = _generate_new_eid()
         self.commands.append((self.scene.set, (eid, *comps,)))
 
-        return eid
-
-    def add(self, eid, *comps):
-        """Add a component to an entity. The component will not be added immediately, but when the buffer is flushed. In particular, exceptions do not occur when calling this method, but only when the buffer is flushed.
-
-        *Changed in version 1.2:* Added support for multiple components.
-        *Deprecated since version 1.2:* Use *set()* instead.
-        """
-
-        self.commands.append((self.scene.add, (eid, *comps)))
+        
 
     def set(self, eid, *comps):
         """Set components of an entity. The componentes will not be set immediately, but when the buffer is flushed. In particular, exception do not ossur when calling this method, but only when the buffer if flushed.
@@ -241,15 +232,6 @@ class Scene():
             self._remove_entity(entity)
             self._add_entity(entity, entity_component_dict)
 
-    def buffer(self):
-        """Return a new command buffer that is associated to this scene.
-
-        *New in version 1.1.*
-        *Deprecated since version 1.2:* Use *CommandBuffer(scene)* instead.
-        """
-
-        return CommandBuffer(self)
-
     def new(self, *comps):
         """Returns a valid and previously unused entity id. If one or more components are supplied to the method, these will be added to the new entity. Raises *ValueError* if trying to add duplicate component types.
 
@@ -316,43 +298,6 @@ class Scene():
 
         return tuple(archetype)
 
-    def add(self, eid, *comps):
-        """Add components to an entity. Returns the component(s) as a list if two or more components are given, or a single component instance if only one component is given. Raises *KeyError* if the entity id is not valid or *ValueError* if the entity would have one or more components of the same type after this operation or no components are supplied to the method.
-
-        *Changed in version 1.2:* Added support for multiple components.
-        *Deprecated since version 1.2:* Use *set()* instead.
-        """
-
-        # raise ValueError if no component are given
-        if not comps:
-            raise ValueError("missing input")
-
-        # raise ValueError if trying to add duplicate component types
-        if len(set(type(comp) for comp in comps)) < len(comps):
-            comptypes = [type(comp) for comp in comps]
-            raise ValueError(f"adding duplicate component type(s): {', '.join(str(ct) for ct in comptypes if comptypes.count(ct) > 1)}")
-
-        complist = list(comps)
-        if eid in self.entitymap:
-            archetype, index = self.entitymap[eid]
-            _, comptypemap = self.chunkmap[archetype]
-
-            # raise ValueError if trying to add component types that are already present
-            if any(type(comp) in comptypemap for comp in comps):
-                raise ValueError(f"component type(s) already present: {', '.join(str(type(comp)) for comp in comps if type(comp) in comptypemap)}")
-
-            # collect old components and remove the entity
-            complist.extend(comptypemap[comptype][index] for comptype in comptypemap)
-            self._removeEntity(eid)
-
-        compdict = {type(c): c for c in complist}
-        self._addEntity(eid, compdict)
-
-        if len(comps) == 1:
-            return comps[0]
-        else:
-            return list(comps)
-
     def set(self, eid, *comps):
         """Set components of an entity. Raises *KeyError* if the entity id is not valid or *ValueError* if trying to set two or more components of the same type simultaneously.
 
@@ -388,26 +333,6 @@ class Scene():
                 self._addEntity(eid, newcompdict)
         else: # ... add entity.
             self._addEntity(eid, compdict)
-
-    def has(self, eid, *comptypes):
-        """Return *True* if the entity has a component of each of the given types, *False* otherwise. Raises *KeyError* if the entity id is not valid or *ValueError* if no component type is supplied to the method.
-
-        *Changed in version 1.2:* Added support for multiple component types.
-        *Deprecated since version 1.3:* Use *match()* instead.
-        """
-
-        # raise ValueError if no component types are given
-        if not comptypes:
-            raise ValueError("missing input")
-
-        # unpack entity
-        try:
-            archetype, _ = self.entitymap[eid]
-            _, comptypemap = self.chunkmap[archetype]
-        except KeyError: # eid not in self.entitymap
-            return False
-
-        return all(ct in comptypemap for ct in comptypes)
 
     def match(self, eid, filter):
         """Return *True* if the archetype of the entity matches the filter, *False* otherwise.
