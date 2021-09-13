@@ -347,6 +347,27 @@ class Scene():
         except KeyError: # ct not in comptypemap
             raise ValueError(f"missing component type(s): {', '.join(str(ct) for ct in comptypes if ct not in comptypemap)}")
 
+    def get(self, entity, component_type):
+        """
+        Get a component of an entity.
+
+        Returns the component. Raises *KeyError* if the entity does not have a component of the requested type.
+
+        *Changed in version 1.3.* Does not raise *KeyError* on invalid entity id but on invalid component type and does not raise *ValueError* anymore.
+        """
+
+        try:
+            container = self._entity_to_container[entity]
+        except KeyError:
+            raise KeyError(component_type)
+
+        try:
+            component = container.component(entity, component_type)
+        except KeyError:
+            raise KeyError(component_type)
+
+        return component
+
     def get(self, eid, comptype):
         """Get one component of an entity. Returns the component. Raises *KeyError* if the entity id is not valid or *ValueError* if the entity does not have a component of the requested type."""
 
