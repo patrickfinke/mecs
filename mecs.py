@@ -158,18 +158,18 @@ class Filter():
         Return a new filter that matches a signature if that signature matches this filter or the other filter.
         """
 
-        singled_filter = lambda signature: self._single_filter(signature) or other._single_filter(signature)
+        single_filter = lambda signature: self._single_filter(signature) or other._single_filter(signature)
         group_filter = lambda archetypemap: self._group_filter(archetypemap) | other._group_filter(archetypemap)
-        return Filter(singled_filter, group_filter)
+        return Filter(single_filter, group_filter)
 
     def __invert__(self):
         """
         Return a new filter that matches a signature if that signature does not match this filter.
         """
 
-        singled_filter = lambda signature: not self._single_filter(signature)
+        single_filter = lambda signature: not self._single_filter(signature)
         group_filter = lambda archetypemap: set.union(*archetypemap.values()) - self._group_filter(archetypemap)
-        return Filter(singled_filter, group_filter)
+        return Filter(single_filter, group_filter)
 
 class ComponentMeta(type, Filter):
     """
