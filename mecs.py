@@ -136,12 +136,12 @@ class CommandBuffer():
     *New in version 1.1.*
     """
 
-    def __init__(self, scene):
+    def __init__(self, storage):
         """
-        Associate the buffer with the provided scene.
+        Associate the buffer with an entity storage.
         """
 
-        self.scene = scene
+        self.storage = storage
         self.commands = []
 
     def __enter__(self):
@@ -158,7 +158,7 @@ class CommandBuffer():
         """
 
         eid = _generate_new_eid()
-        self.commands.append((self.scene.set, (eid, *comps,)))
+        self.commands.append((self.storage.set, (eid, *comps,)))
 
         
 
@@ -171,7 +171,7 @@ class CommandBuffer():
         *New in version 1.2.*
         """
 
-        self.commands.append((self.scene.set, (eid, *comps)))
+        self.commands.append((self.storage.set, (eid, *comps)))
 
     def remove(self, eid, *comptypes):
         """
@@ -182,7 +182,7 @@ class CommandBuffer():
         *Changed in version 1.2:* Added support for multiple component types.
         """
 
-        self.commands.append((self.scene.remove, (eid, *comptypes)))
+        self.commands.append((self.storage.remove, (eid, *comptypes)))
 
     def free(self, eid):
         """
@@ -191,22 +191,24 @@ class CommandBuffer():
         The components will not be removed immediately, but when the buffer if flushed. In particular, exceptions do not occur when calling this method, but only when the buffer is flushed.
         """
 
-        self.commands.append((self.scene.free, (eid,)))
+        self.commands.append((self.storage.free, (eid,)))
 
     def flush(self):
         """
         Flush the buffer.
 
-        This will apply all commands that have been previously stored in the buffer to its associated scene. If any arguments in these commands are faulty, exceptions may arrise.
+        This will apply all commands that have been previously stored in the buffer to the associated entity storage. If any arguments in these commands are faulty, exceptions may arrise.
         """
 
         for cmd, args in self.commands:
             cmd(*args)
         self.commands.clear()
 
-class Scene():
+class Storage():
     """
-    A scene of entities that allows for efficient component management.
+    A storage for entities.
+
+    When a component is added to an entity that is not part of the storage, the entity is automatically added as well. When all components of an entity are removed, the entity is automatically removed from the storage. Thus, the storage contains all entities that have at least one component.
     """
 
     def __init__(self):
@@ -255,6 +257,43 @@ class Scene():
             entity_component_dict.update(component_dict)
             self._remove_entity(entity)
             self._add_entity(entity, entity_component_dict)
+
+    def __bool__(self):
+        """
+        Check if the storage is not empty.
+
+        An entity is in the storage if it has at least one component.
+        """
+
+        return bool(self._entity_to_container)
+
+    def __len__(self):
+        """
+        Return the number of entities in the storage.
+
+        An entity is in the storage if it has at least one component.
+        """
+
+        return len(self._entity_to_container)
+
+    def __contains__(self):
+        """
+        Check if an entity is in the storage.
+
+        An entity is in the storage if it has at least one component.
+        """
+
+        return entity in self._entity_to_container
+
+    def __iter__(self):
+        """
+        Iterate over all entities in the storage.
+
+        An entity is in the storage if it has at least one component.
+        """
+
+        for container in self._entity_to_container.values():
+            yield from container
 
     def new(self, *components):
         """
