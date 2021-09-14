@@ -6,6 +6,12 @@ from itertools import repeat as _repeat
 __version__ = '1.2.1'
 
 class _Container():
+    """
+    A container for entities with the same signature.
+
+    This class does not check its inputs for errors and should only be used internally.
+    """
+    
     def __init__(self, signature):
         self._signature = signature
         self._entities = []
@@ -13,23 +19,47 @@ class _Container():
         self._indices = {}
 
     def __len__(self):
+        """
+        Return the number of entities in the container.
+        """
+
         return len(self._entities)
 
     def __iter__(self):
+        """
+        Iterate over all entities in the container.
+        """
+
         yield from self._entities
 
     @property
     def signature(self):
+        """
+        Return the (shared) signature of all entities in the container.
+        """
+
         return self._signature
 
     @property
     def entities(self):
+        """
+        Return a list of all entities in the container.
+        """
+
         return self._entities
 
     def component_list(self, component_type):
+        """
+        Return a list of all components of a type.
+        """
+
         return self._components[component_type]
 
     def add(self, entity, component_dict):
+        """
+        Add an entity to the container.
+        """
+
         self._entities.append(entity)
 
         for component_type, component in component_dict.items():
@@ -41,6 +71,10 @@ class _Container():
         return index
 
     def _move(self, index_to, index_from):
+        """
+        Overwrite the entity data at one index with the entity data form another index.
+        """
+
         self._entities[index_to] = self._entities[index_from]
 
         for component_list in self._components.values():
@@ -50,6 +84,10 @@ class _Container():
         self._indices[entity_from] = index_to
 
     def remove(self, entity):
+        """
+        Remove an entity form the container.
+        """
+
         index = self._indices[entity]
 
         last_index = len(self._entities) - 1
@@ -64,18 +102,32 @@ class _Container():
         del self._indices[entity]
 
     def component_dict(self, entity):
+        """
+        Return the component dict of an entity.
+
+        The component dict maps component types to component instances.
+        """
+
         index = self._indices[entity]
 
         component_dict = {ct: cl[index] for ct, cl in self._components.items()}
         return component_dict
 
     def component(self, entity, component_type):
+        """
+        Return a component of an entitiy.
+        """
+
         index = self._indices[entity]
         component_list = self._components[component_type]
         component = component_list[index]
         return component
 
     def update(self, entity, component_dict):
+        """
+        Set components of an entity.
+        """
+
         index = self._indices[entity]
 
         for component_type, component in component_dict.items():
@@ -94,16 +146,28 @@ class Filter():
         self._group_filter = group_filter
 
     def __and__(self, other):
+        """
+        Return a new filter that matches a signature if that signature matches this filter and the other filter.
+        """
+
         single_filter = lambda signature: self._single_filter(signature) and other._single_filter(signature)
         group_filter = lambda archetypemap: self._group_filter(archetypemap) & other._group_filter(archetypemap)
         return Filter(single_filter, group_filter)
 
     def __or__(self, other):
+        """
+        Return a new filter that matches a signature if that signature matches this filter or the other filter.
+        """
+
         singled_filter = lambda signature: self._single_filter(signature) or other._single_filter(signature)
         group_filter = lambda archetypemap: self._group_filter(archetypemap) | other._group_filter(archetypemap)
         return Filter(singled_filter, group_filter)
 
     def __invert__(self):
+        """
+        Return a new filter that matches a signature if that signature does not match this filter.
+        """
+
         singled_filter = lambda signature: not self._single_filter(signature)
         group_filter = lambda archetypemap: set.union(*archetypemap.values()) - self._group_filter(archetypemap)
         return Filter(singled_filter, group_filter)
@@ -217,6 +281,12 @@ class Storage():
         self._signature_to_container = {} # {signature: container}
 
     def _add_entity(self, entity, component_dict):
+        """
+        Adds an entity to the storage.
+
+        Adds the entity to the container that matches the signature and creates the container if it does not already exist. This method does not check its inputs for errors and should only be used internally!
+        """
+
         signature = frozenset(component_dict.keys())
 
         if not signature in self._signature_to_container:
@@ -232,6 +302,12 @@ class Storage():
         container.add(entity, component_dict)
 
     def _remove_entity(self, entity):
+        """
+        Remove an entity from the storage.
+
+        Remove an entity from its container and delete the container if it is empty after the entity is removed. This method does not check its inputs for errors and should only be used internally.
+        """
+
         container = self._entity_to_container[entity]
 
         del self._entity_to_container[entity]
@@ -247,6 +323,12 @@ class Storage():
                     del self._ctype_to_container[component_type]
 
     def _update_entity(self, entity, component_dict):
+        """
+        Set components of an entity.
+
+        If the entity does not have a component of the specified type it is added, otherwise the old component is replaced. The container of the entity is only changed when the signature changes. This method does not check its inputs for errors and should only be used internally.
+        """
+
         container = self._entity_to_container[entity]
         signature = container.signature
 
