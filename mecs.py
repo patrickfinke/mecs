@@ -589,7 +589,7 @@ class Storage():
                 except KeyError:
                     raise KeyError(component_types)
             else:
-                components = [([] for _ in range(len(container))]
+                components = [([] for _ in range(len(container)))]
             yield from zip(container, zip(*components))
 
 class View():
@@ -682,5 +682,5 @@ class View():
                 except KeyError:
                     raise KeyError(component_types)
             else:
-                components = [([] for _ in range(len(container))]
+                components = [([] for _ in range(len(container)))]
             yield from zip(container, zip(*components))
