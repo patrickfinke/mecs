@@ -575,30 +575,23 @@ class Storage():
         for system in systems:
             system.onStop(self, **kwargs)
 
+    def select(self, *component_types):
+        """
+        Iterate over entities and their components.
 
-    def select(self, *comptypes, exclude=None):
-        """Iterate over entity ids and their corresponding components. Yields tuples of the form `(eid, (compA, compB, ...))` where `compA`, `compB`, ... are of the given component types and belong to the entity with entity id eid. If no component types are given, iterate over all entities. If *exclude* is not *None*, entities with component types listed in *exclude* will not be considered. Raises *ValueError* if *exclude* contains component types that are also explicitly included."""
+        Yields pairs *(entity, components)* where *components* is a list of components that belong to *entity* and with types as specified in *component_types*. Raises *KeyError* if one of the entities does not have all the required component types.
+        """
 
-        # raise ValueError if trying to exclude component types that are also included
-        if exclude and any(ct in exclude for ct in comptypes):
-            raise ValueError(f"excluding explicitely included component types: {', '.join(str(x) for x in set(comptypes).intersection(exclude))}")
-
-        # collect archetypes that should be included and archetypes that should be excluded
-        incarchetypes = set.intersection(*[self.archetypemap.get(ct, set()) for ct in comptypes]) if comptypes else set(self.chunkmap.keys())
-        excarchetypes = set.union(*[self.archetypemap.get(ct, set()) for ct in exclude]) if exclude else set()
-
-        # iterate over all included archetype that are not excluded
-        # the iteration is reversed, because this will yield better performance when calling e.g. scene.remove() on the result.
-        archetypes = incarchetypes - excarchetypes
-        if comptypes:
-            for archetype in archetypes:
-                eidlist, comptypemap = self.chunkmap[archetype]
-                complists = [reversed(comptypemap[ct]) for ct in comptypes]
-                yield from zip(reversed(eidlist), zip(*complists))
-        else:
-            for archetype in archetypes:
-                eidlist, _ = self.chunkmap[archetype]
-                yield from zip(reversed(eidlist), _repeat(()))
+        containers = set.union(*self._ctype_to_container.values())
+        for container in containers:
+            if component_types:
+                try:
+                    components = [container.component_list(ct) for ct in component_types]
+                except KeyError:
+                    raise KeyError(component_types)
+            else:
+                components = [([] for _ in range(len(container))]
+            yield from zip(container, zip(*components))
 
 class View():
     """
@@ -680,7 +673,7 @@ class View():
         """
         Iterate over entities and their components.
 
-        Yields pairs *(entity, components)* where *components* is a list of components that belong the *entity* and with types as specified in *component_types*. Raises *KeyError* if one of the entities does not have all the required component types.
+        Yields pairs *(entity, components)* where *components* is a list of components that belong to *entity* and with types as specified in *component_types*. Raises *KeyError* if one of the entities does not have all the required component types.
         """
 
         for container in self._matching_containers():
