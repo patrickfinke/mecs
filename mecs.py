@@ -392,40 +392,34 @@ class Scene():
 
         return component
 
-    def remove(self, eid, *comptypes):
-        """Remove components from an entity. Returns a list of the components if two or more component types are given, or a single component instance if only one component type is given. Raises *KeyError* if the entity id is not valid or *ValueError* if the entity does not have a component of any of the given types or if no component types are supplied to the method.
+    def unset(entity, *component_types):
+        """
+        Discard components from an entity.
 
-        *Changed in version 1.2:* Added support for multiple component types.
+        If the entity has a component of the given type it gets removed, if it does not have one nothing happends.
+
+        *New in version 1.3.*
         """
 
-        # raise ValueError if no component types are given
-        if not comptypes:
-            raise ValueError("missing input")
+        if not component_types:
+            return
 
-        # unpack entity
         try:
-            archetype, index = self.entitymap[eid]
-            _, comptypemap = self.chunkmap[archetype]
-        except KeyError: # eid not in self.entitymap
-            raise ValueError(f"missing component type(s): {', '.join(str(ct) for ct in comptypes)}")
+            container = self._entity_to_container[entity]
+        except KeyError:
+            return
 
-        # raise ValueError if the entity does not have the requested component types
-        if not all(ct in comptypemap for ct in comptypes):
-            raise ValueError(f"missing component type(s): {', '.join(str(ct) for ct in comptypes if ct not in comptypemap)}")
+        component_types = set(component_types)
+        signature = container.signature
+        if not signature & component_types:
+            return
 
-        # collect components that will remain on the entity and the ones to be removed
-        compdict = {ct: comptypemap[ct][index] for ct in comptypemap if ct not in comptypes}
-        removed = list(comptypemap[ct][index] for ct in comptypes)
+        component_dict = container.component_dict(entity)
+        self._remove_entity(entity)
 
-        # remove the entity and add it back if there are remaining components
-        self._removeEntity(eid)
-        if compdict:
-            self._addEntity(eid, compdict)
-
-        if len(removed) == 1:
-            return removed[0]
-        else:
-            return removed
+        new_component_dict = {ct: c for ct, c in component_dict.items() if ct not in component_types}
+        if new_component_dict:
+            self._add_entity(entity, new_component_dict)
 
     def start(self, *systems, **kwargs):
         """
