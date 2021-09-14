@@ -14,6 +14,9 @@ All notable changes to this project will be documented in this file. This projec
   - Renamed `Scene.archetype()` to `Scene.signature()` and return a frozenset instead of a tuple.
   - Changed `Scene.set()` so that it does not raise `KeyError` or `ValueError` anymore.
   - Changed `Scene.get()` so that it does not raise `ValueError` anymore and does not raise `KeyError` on invalid entity id but on invalid component type.
+  - Rename `Scene` to `Storage`.
+  - Add `View` to get a filtered view of a `Storage` instance. This replaces and extends the behaviour of `Storage.select()`.
+  - Change `Storage.select()` to work like `View.select()`.
 
 - v1.2.1 - Improve performance
 
