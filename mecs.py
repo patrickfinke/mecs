@@ -1,7 +1,6 @@
 """An implementation of the Entity Component System (ECS) paradigm."""
 
 from uuid import uuid4 as _generate_new_entity_id
-from itertools import repeat as _repeat
 
 __version__ = '1.2.1'
 
