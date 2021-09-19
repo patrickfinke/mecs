@@ -91,7 +91,7 @@ class _Container():
 
         last_index = len(self._entities) - 1
         if index != last_index:
-            moved_entity, moved_index_to = self._move(index, last_index)
+            self._move(index, last_index)
 
         self._entities.pop()
 
@@ -112,7 +112,7 @@ class _Container():
         component_dict = {ct: cl[index] for ct, cl in self._components.items()}
         return component_dict
 
-    def component(self, entity, component_type):
+    def get_component(self, entity, component_type):
         """
         Return a component of an entitiy.
         """
@@ -121,6 +121,16 @@ class _Container():
         component_list = self._components[component_type]
         component = component_list[index]
         return component
+
+    def get_components(self, entity, component_types):
+        """
+        Return multiple components of an entity.
+        """
+        
+        index = self._indices[entity]
+        component_lists = [self._components[ct] for ct in component_types]
+        components = [cl[index] for cl in component_lists]
+        return components
 
     def update(self, entity, component_dict):
         """
@@ -213,45 +223,40 @@ class CommandBuffer():
     def __exit__(self, type, value, traceback):
         self.flush()
 
-    def new(self, *comps):
+    def create(self, *comps):
         """
-        Returns an entity id that is only valid to use with the current buffer. If one or more components are supplied to the method, these will be added to the new entity.
+        Store a future call to the *create()* method of the associated storage.
+
+        Returns the entity id of the entity that will be created.
 
         *New in version 1.2.*
+        *Changed in version 1.3:* Entity ids are globally valid.
         """
 
         eid = _generate_new_eid()
         self.commands.append((self.storage.set, (eid, *comps,)))
-
         
-
-    def set(self, eid, *comps):
+    def set(self, entity, component):
         """
-        Set components of an entity.
-
-        The componentes will not be set immediately, but when the buffer is flushed. In particular, exception do not occur when calling this method, but only when the buffer if flushed.
+        Store a future call to the *set()* method of the associated storage.
 
         *New in version 1.2.*
         """
 
-        self.commands.append((self.storage.set, (eid, *comps)))
+        self.commands.append((self.storage.set, (entity, component)))
 
-    def remove(self, eid, *comptypes):
+    def delete(self, entity, component_type):
         """
-        Remove a component from an entity.
-
-        The component will not be removed immediately, but when the buffer is flushed. In particular, exceptions do not occur when calling this method, but only when the buffer is flushed.
+        Store a future call to the *delete()* method of the associated storage.
 
         *Changed in version 1.2:* Added support for multiple component types.
         """
 
         self.commands.append((self.storage.remove, (eid, *comptypes)))
 
-    def free(self, eid):
+    def destroy(self, entity):
         """
-        Remove all components of an entity.
-
-        The components will not be removed immediately, but when the buffer if flushed. In particular, exceptions do not occur when calling this method, but only when the buffer is flushed.
+        Store a future call to the *destroy()* method of the associated storage.
         """
 
         self.commands.append((self.storage.free, (eid,)))
@@ -260,7 +265,7 @@ class CommandBuffer():
         """
         Flush the buffer.
 
-        This will apply all commands that have been previously stored in the buffer to the associated entity storage. If any arguments in these commands are faulty, exceptions may arrise.
+        This will apply all commands that have previously been stored in the buffer to the associated storage. Note that if any of the arguments in these commands were invalid, exceptions may arrise.
         """
 
         for cmd, args in self.commands:
@@ -380,25 +385,26 @@ class Storage():
         for container in self._entity_to_container.values():
             yield from container
 
-    def new(self, *components):
+    def create(self, component=None):
         """
-        Generate a new entity id.
+        Create an entity.
 
-        Generates a previously unused entity id and returns it. If any components are passed to this method, the last of every type will be added to the entity.
+        Generates a previously unused entity id and returns it. If any components are passed to this method, they will be added to the entity. If there a multiple components of one type, the last component will prevail.
 
         *Changed in version 1.2:* Added the optional *comps* parameter.
         *Changed in version 1.3:* Sets the last component of a type instead of raising *ValueError*.
         """
 
         entity = _generate_new_entity_id()
-        self.set(entity, *components)
+        if component is not None:
+            self.set(entity, component)
         return entity
 
-    def free(self, entity):
+    def destroy(self, entity):
         """
-        Remove all components from an entity.
+        Destory an entity.
 
-        If the entity does not have any components this method does nothing.
+        The entity will be removed from the storage.
 
         *Changed in version 1.3:* Exit silently instead of raising *KeyError* and return `None` instead of the components.
         """
@@ -436,24 +442,80 @@ class Storage():
         signature = container.signature
         return signature
 
-    def set(self, entity, *components):
+    def set(self, entity, component):
         """
         Set components of an entity.
 
-        If the entity already has a component of the same type it gets replaced, otherwise the component is added. If multiple components of the same type are passed, the last one prevails.
+        *component* can be a single component or an iterable of components. If the entity already has a component of the same type it gets replaced, otherwise the component is added. If an iterable with multiple components of the same type is passed, the last of each type prevails.
 
         *New in version 1.2.*
-        *Changed in version 1.3:* Does not raise *KeyError* or *ValueError* anymore.
+        *Changed in version 1.3:* Does not raise *KeyError* or *ValueError* anymore. Accepts iterables of components.
         """
 
-        if not components:
-            return
+        if isinstance(component, Component):
+            component_dict = {type(component): component}
+        else:
+            component_dict = {type(c): c for c in component}
 
-        component_dict = {type(c): c for c in components}
         if entity in self._entity_to_container:
             self._update_entity(entity, component_dict)
         else:
             self._add_entity(entity, component_dict)
+
+    def get(self, entity, component_type):
+        """
+        Get components of an entity.
+
+        *component_type* can be a single component type or an iterable of component types. In case of a single component this method returns the component, in case of an iterable it returns a list of components. Raises *KeyError* if the entity does not have a component of the requested type(s).
+
+        *Changed in version 1.3.* Does not raise *KeyError* on invalid entity id but on invalid component type and does not raise *ValueError* anymore. Accepts iterables of component types.
+        """
+
+        try:
+            container = self._entity_to_container[entity]
+        except KeyError:
+            raise KeyError(component_type)
+
+        if isinstance(component_type, ComponentMeta):
+            try:
+                return container.get_component(entity, component_type)
+            except KeyError:
+                raise KeyError(component_type)
+        else:
+            try:
+                return container.get_components(entity, component_type)
+            except KeyError:
+                raise KeyError(component_type)
+
+    def delete(entity, component_type):
+        """
+        Delete components from an entity.
+
+        *component_type* can be a single component type or an iterable of component types. In case of a single component type the corresponding component is removed from the entity, in case of an iterable of components types all the corresponding components are removed from the entity. If the entity does not have one of the components there is no error raised.
+
+        *New in version 1.3.*
+        """
+
+        try:
+            container = self._entity_to_container[entity]
+        except KeyError:
+            return
+
+        if isinstance(component_type, ComponentMeta):
+            component_types = set((component_type,))
+        else:
+            component_types = set(component_types)
+
+        signature = container.signature
+        if not signature & component_types:
+            return
+
+        component_dict = container.component_dict(entity)
+        self._remove_entity(entity)
+
+        new_component_dict = {ct: c for ct, c in component_dict.items() if ct not in component_types}
+        if new_component_dict:
+            self._add_entity(entity, new_component_dict)
 
     def match(self, entity, filter):
         """
@@ -494,56 +556,6 @@ class Storage():
             return [comptypemap[ct][index] for ct in comptypes]
         except KeyError: # ct not in comptypemap
             raise ValueError(f"missing component type(s): {', '.join(str(ct) for ct in comptypes if ct not in comptypemap)}")
-
-    def get(self, entity, component_type):
-        """
-        Get a component of an entity.
-
-        Returns the component. Raises *KeyError* if the entity does not have a component of the requested type.
-
-        *Changed in version 1.3.* Does not raise *KeyError* on invalid entity id but on invalid component type and does not raise *ValueError* anymore.
-        """
-
-        try:
-            container = self._entity_to_container[entity]
-        except KeyError:
-            raise KeyError(component_type)
-
-        try:
-            component = container.component(entity, component_type)
-        except KeyError:
-            raise KeyError(component_type)
-
-        return component
-
-    def unset(entity, *component_types):
-        """
-        Discard components from an entity.
-
-        If the entity has a component of the given type it gets removed, if it does not have one nothing happends.
-
-        *New in version 1.3.*
-        """
-
-        if not component_types:
-            return
-
-        try:
-            container = self._entity_to_container[entity]
-        except KeyError:
-            return
-
-        component_types = set(component_types)
-        signature = container.signature
-        if not signature & component_types:
-            return
-
-        component_dict = container.component_dict(entity)
-        self._remove_entity(entity)
-
-        new_component_dict = {ct: c for ct, c in component_dict.items() if ct not in component_types}
-        if new_component_dict:
-            self._add_entity(entity, new_component_dict)
 
     def start(self, *systems, **kwargs):
         """
