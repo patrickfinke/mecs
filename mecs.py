@@ -4,6 +4,16 @@ from uuid import uuid4 as _generate_new_entity_id
 
 __version__ = '1.2.1'
 
+class EntityError(KeyError):
+    """ Raise if an entity is missing. """
+
+    pass
+
+class ComponentError(KeyError):
+    """ Raise if a component is missing. """
+
+    pass
+
 class _Container():
     """
     A container for entities with the same signature.
@@ -223,7 +233,7 @@ class CommandBuffer():
     def __exit__(self, type, value, traceback):
         self.flush()
 
-    def create(self, *comps):
+    def create(self, component=None):
         """
         Store a future call to the *create()* method of the associated storage.
 
@@ -233,8 +243,8 @@ class CommandBuffer():
         *Changed in version 1.3:* Entity ids are globally valid.
         """
 
-        eid = _generate_new_eid()
-        self.commands.append((self.storage.set, (eid, *comps,)))
+        entity = _generate_new_eid()
+        self.commands.append((self.storage.set, (entity, component)))
         
     def set(self, entity, component):
         """
@@ -252,14 +262,14 @@ class CommandBuffer():
         *Changed in version 1.2:* Added support for multiple component types.
         """
 
-        self.commands.append((self.storage.remove, (eid, *comptypes)))
+        self.commands.append((self.storage.delete, (entity, component_type)))
 
     def destroy(self, entity):
         """
         Store a future call to the *destroy()* method of the associated storage.
         """
 
-        self.commands.append((self.storage.free, (eid,)))
+        self.commands.append((self.storage.destroy, (entity,)))
 
     def flush(self):
         """
@@ -305,14 +315,14 @@ class Storage():
         self._entity_to_container[entity] = container
         container.add(entity, component_dict)
 
-    def _remove_entity(self, entity):
+    def _remove_entity(self, container, entity):
         """
         Remove an entity from the storage.
 
         Remove an entity from its container and delete the container if it is empty after the entity is removed. This method does not check its inputs for errors and should only be used internally.
         """
 
-        container = self._entity_to_container[entity]
+        #container = self._entity_to_container[entity]
 
         del self._entity_to_container[entity]
         container.remove(entity)
@@ -326,14 +336,14 @@ class Storage():
                 if not self._ctype_to_container[component_type]:
                     del self._ctype_to_container[component_type]
 
-    def _update_entity(self, entity, component_dict):
+    def _update_entity(self, container, entity, component_dict):
         """
         Set components of an entity.
 
         If the entity does not have a component of the specified type it is added, otherwise the old component is replaced. The container of the entity is only changed when the signature changes. This method does not check its inputs for errors and should only be used internally.
         """
 
-        container = self._entity_to_container[entity]
+        #container = self._entity_to_container[entity]
         signature = container.signature
 
         if component_dict.keys() <= signature:
@@ -351,8 +361,6 @@ class Storage():
     def __bool__(self):
         """
         Check if the storage is not empty.
-
-        An entity is in the storage if it has at least one component.
         """
 
         return bool(self._entity_to_container)
@@ -360,8 +368,6 @@ class Storage():
     def __len__(self):
         """
         Return the number of entities in the storage.
-
-        An entity is in the storage if it has at least one component.
         """
 
         return len(self._entity_to_container)
@@ -369,8 +375,6 @@ class Storage():
     def __contains__(self):
         """
         Check if an entity is in the storage.
-
-        An entity is in the storage if it has at least one component.
         """
 
         return entity in self._entity_to_container
@@ -378,8 +382,6 @@ class Storage():
     def __iter__(self):
         """
         Iterate over all entities in the storage.
-
-        An entity is in the storage if it has at least one component.
         """
 
         for container in self._entity_to_container.values():
@@ -389,16 +391,24 @@ class Storage():
         """
         Create an entity.
 
-        Generates a previously unused entity id and returns it. If any components are passed to this method, they will be added to the entity. If there a multiple components of one type, the last component will prevail.
+        Generates a new entity id and returns it. If any components are passed to this method, they will be added to the entity. If there a multiple components of one type, the last component will prevail.
 
         *Changed in version 1.2:* Added the optional *comps* parameter.
         *Changed in version 1.3:* Sets the last component of a type instead of raising *ValueError*.
         """
 
         entity = _generate_new_entity_id()
+
         if component is not None:
-            self.set(entity, component)
+            if isinstance(component, Component):
+                component_dict = {type(component): component}
+            else:
+                component_dict = {type(c): c for c in component}
+
+            self._add_entity(entity, component_dict)
+
         return entity
+
 
     def destroy(self, entity):
         """
@@ -409,20 +419,24 @@ class Storage():
         *Changed in version 1.3:* Exit silently instead of raising *KeyError* and return `None` instead of the components.
         """
 
-        if entity in self._entity_to_container:
-            self._remove_entity(entity)
+        try:
+            container = self._entity_to_container[entity]
+        except KeyError:
+            raise EntityError(entity)
+
+        self._remove_entity(container, entity)
 
     def components(self, entity):
         """
         Return a list of all components of an entity.
 
-        *Changed in version 1.3:* Return `[]` instead of raising `KeyError` and return a list instead of a tuple.
+        *Changed in version 1.3:* Raise `EntityError` on missing entity and return a list instead of a tuple.
         """
 
         try:
             container = self._entity_to_container[entity]
         except KeyError:
-            return []
+            raise EntityError(entity)
 
         components = list(container.component_dict(entity).values())
         return components
@@ -431,13 +445,13 @@ class Storage():
         """
         Return the signature of an entity.
 
-        *Changed in version 1.3:* Renamed from `archetype` and return a frozenset instead of a tuple.
+        *Changed in version 1.3:* Renamed from `archetype`, raise `EntityError` on missing entity and return a frozenset instead of a tuple.
         """
 
         try:
             container = self._entity_to_container[entity]
         except KeyError:
-            return frozenset()
+            raise EntityError(entity)
 
         signature = container.signature
         return signature
@@ -449,18 +463,20 @@ class Storage():
         *component* can be a single component or an iterable of components. If the entity already has a component of the same type it gets replaced, otherwise the component is added. If an iterable with multiple components of the same type is passed, the last of each type prevails.
 
         *New in version 1.2.*
-        *Changed in version 1.3:* Does not raise *KeyError* or *ValueError* anymore. Accepts iterables of components.
+        *Changed in version 1.3:* Does not raise *KeyError* or *ValueError* anymore but *EntityError*. Accepts iterables of components.
         """
+
+        try:
+            container = self._entity_to_container[entity]
+        except KeyError:
+            raise EntityError(entity)
 
         if isinstance(component, Component):
             component_dict = {type(component): component}
         else:
             component_dict = {type(c): c for c in component}
 
-        if entity in self._entity_to_container:
-            self._update_entity(entity, component_dict)
-        else:
-            self._add_entity(entity, component_dict)
+        self._update_entity(container, entity, component_dict)
 
     def get(self, entity, component_type):
         """
@@ -468,24 +484,24 @@ class Storage():
 
         *component_type* can be a single component type or an iterable of component types. In case of a single component this method returns the component, in case of an iterable it returns a list of components. Raises *KeyError* if the entity does not have a component of the requested type(s).
 
-        *Changed in version 1.3.* Does not raise *KeyError* on invalid entity id but on invalid component type and does not raise *ValueError* anymore. Accepts iterables of component types.
+        *Changed in version 1.3.* Raises *EntityError* and *ComponentError*. Accepts iterables of component types.
         """
 
         try:
             container = self._entity_to_container[entity]
         except KeyError:
-            raise KeyError(component_type)
+            raise EntityError(component_type)
 
         if isinstance(component_type, ComponentMeta):
             try:
                 return container.get_component(entity, component_type)
             except KeyError:
-                raise KeyError(component_type)
+                raise ComponentError(component_type)
         else:
             try:
                 return container.get_components(entity, component_type)
             except KeyError:
-                raise KeyError(component_type)
+                raise ComponentError(component_type)
 
     def delete(entity, component_type):
         """
@@ -499,7 +515,7 @@ class Storage():
         try:
             container = self._entity_to_container[entity]
         except KeyError:
-            return
+            raise EntityError(entity)
 
         if isinstance(component_type, ComponentMeta):
             component_types = set((component_type,))
@@ -533,29 +549,6 @@ class Storage():
             signature = frozensset()
 
         return filter._single_filter(signature)
-
-    def collect(self, eid, *comptypes):
-        """Collect multiple components of an entity. Returns a list of the components. Raises *KeyError* if the entity id is not valid or *ValueError* if a component of any of the requested types is missing.
-
-        *New in version 1.2.*
-        """
-
-        # return empty list if no components are requested
-        if not comptypes:
-            return []
-
-        # unpack entity
-        try:
-            archetype, index = self.entitymap[eid]
-            _, comptypemap = self.chunkmap[archetype]
-        except KeyError: # eid not in self.entitymap
-            raise ValueError(f"missing component type(s): {', '.join(str(ct) for ct in comptypes)}")
-
-        # collect and return components
-        try:
-            return [comptypemap[ct][index] for ct in comptypes]
-        except KeyError: # ct not in comptypemap
-            raise ValueError(f"missing component type(s): {', '.join(str(ct) for ct in comptypes if ct not in comptypemap)}")
 
     def start(self, *systems, **kwargs):
         """
