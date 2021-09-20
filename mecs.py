@@ -550,6 +550,17 @@ class Storage():
 
         return filter._single_filter(signature)
 
+    def clear(self):
+        """
+        Destroy all entities.
+
+        *New in version 1.3.*
+        """
+
+        self._entity_to_container.clear()
+        self._ctype_to_container.clear()
+        self._signature_to_container.clear()
+
     def start(self, *systems, **kwargs):
         """
         Initialize the scene.

@@ -17,6 +17,7 @@ All notable changes to this project will be documented in this file. This projec
   - Rename `Scene` to `Storage`.
   - Add `View` to get a filtered view of a `Storage` instance. This replaces and extends the behaviour of `Storage.select()`.
   - Change `Storage.select()` to work like `View.select()`.
+  - Add `Storage.clear()`.
 
 - v1.2.1 - Improve performance
 
