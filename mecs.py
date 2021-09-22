@@ -243,8 +243,8 @@ class CommandBuffer():
         *Changed in version 1.3:* Entity ids are globally valid.
         """
 
-        entity = _generate_new_eid()
-        self.commands.append((self.storage.set, (entity, component)))
+        entity = _generate_new_entity_id()
+        self.commands.append((self.storage.create, (component, entity)))
         
     def set(self, entity, component):
         """
@@ -387,7 +387,7 @@ class Storage():
         for container in self._entity_to_container.values():
             yield from container
 
-    def create(self, component=None):
+    def create(self, component=None, entity_id=None):
         """
         Create an entity.
 
@@ -397,7 +397,8 @@ class Storage():
         *Changed in version 1.3:* Sets the last component of a type instead of raising *ValueError*.
         """
 
-        entity = _generate_new_entity_id()
+        if entity_id is None:
+            entity_id = _generate_new_entity_id()
 
         if component is not None:
             if isinstance(component, Component):
@@ -405,10 +406,9 @@ class Storage():
             else:
                 component_dict = {type(c): c for c in component}
 
-            self._add_entity(entity, component_dict)
+            self._add_entity(entity_id, component_dict)
 
-        return entity
-
+        return entity_id
 
     def destroy(self, entity):
         """
