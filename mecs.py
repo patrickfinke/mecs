@@ -1,8 +1,13 @@
 """An implementation of the Entity Component System (ECS) paradigm."""
 
-from uuid import uuid4 as _generate_new_entity_id
+from uuid import uuid4 as _uuid4
 
 __version__ = '1.2.1'
+
+def _generate_new_entity_id():
+    uuid = _uuid4()
+    entity = Entity(uuid.hex)
+    return entity
 
 class EntityError(KeyError):
     """ Raise if an entity is missing. """
@@ -20,6 +25,9 @@ class Signature(frozenset):
 
     def __repr__(self):
         return str(self)
+
+class Entity(str):
+    pass
 
 class _Container():
     """
