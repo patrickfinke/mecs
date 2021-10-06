@@ -18,6 +18,8 @@ All notable changes to this project will be documented in this file. This projec
   - Add `View` to get a filtered view of a `Storage` instance. This replaces and extends the behaviour of `Storage.select()`.
   - Change `Storage.select()` to work like `View.select()`.
   - Add `Storage.clear()`.
+  - The methods of `CommandBuffer` that correspond to future calls to the storage now have the prefix `defer_`.
+  - Add `CommandBuffer.stroage` and `CommandBuffer.clear()`.
 
 - v1.2.1 - Improve performance
 
