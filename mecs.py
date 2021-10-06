@@ -587,7 +587,7 @@ class Storage():
             container = self._entity_to_container[entity]
             signature = container.signature
         except KeyError:
-            signature = frozensset()
+            signature = Signature()
 
         return filter._single_filter(signature)
 
