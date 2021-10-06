@@ -20,6 +20,7 @@ All notable changes to this project will be documented in this file. This projec
   - Add `Storage.clear()`.
   - The methods of `CommandBuffer` that correspond to future calls to the storage now have the prefix `defer_`.
   - Add `CommandBuffer.stroage` and `CommandBuffer.clear()`.
+  - Add `Signature` class.
 
 - v1.2.1 - Improve performance
 

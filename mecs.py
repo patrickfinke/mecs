@@ -14,6 +14,13 @@ class ComponentError(KeyError):
 
     pass
 
+class Signature(frozenset):
+    def __str__(self):
+        return f"Signature({', '.join(ct.__name__ for ct in self)})"
+
+    def __repr__(self):
+        return str(self)
+
 class _Container():
     """
     A container for entities with the same signature.
@@ -327,7 +334,7 @@ class Storage():
         Adds the entity to the container that matches the signature and creates the container if it does not already exist. This method does not check its inputs for errors and should only be used internally!
         """
 
-        signature = frozenset(component_dict.keys())
+        signature = Signature(component_dict.keys())
 
         if not signature in self._signature_to_container:
             container = _Container(signature)
@@ -471,7 +478,7 @@ class Storage():
         """
         Return the signature of an entity.
 
-        *Changed in version 1.3:* Renamed from `archetype`, raise `EntityError` on missing entity and return a frozenset instead of a tuple.
+        *Changed in version 1.3:* Renamed from `archetype`, raise `EntityError` on missing entity and return a `Signature` instance instead of a tuple.
         """
 
         try:
