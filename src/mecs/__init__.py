@@ -6,7 +6,7 @@ __version__ = '1.2.1'
 
 def _generate_new_entity_id():
     uuid = _uuid4()
-    entity = Entity(uuid.hex)
+    entity = Entity(uuid.int)
     return entity
 
 class EntityError(KeyError):
@@ -27,7 +27,8 @@ class Signature(frozenset):
         return str(self)
 
 class Entity(str):
-    pass
+    def __repr__(self):
+        return f"Entity({self})"
 
 class _Container():
     """
