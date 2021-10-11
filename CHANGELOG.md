@@ -23,6 +23,7 @@ All notable changes to this project will be documented in this file. This projec
   - Add `Signature` class.
   - Add `Entity` class.
   - Remove `Storage.start()`, `Storage.update()` and `Storage.stop()`.
+  - Rename project to `yaecs`.
 
 - v1.2.1 - Improve performance
 
