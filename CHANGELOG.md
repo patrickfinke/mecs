@@ -22,6 +22,7 @@ All notable changes to this project will be documented in this file. This projec
   - Add `CommandBuffer.stroage` and `CommandBuffer.clear()`.
   - Add `Signature` class.
   - Add `Entity` class.
+  - Remove `Storage.start()`, `Storage.update()` and `Storage.stop()`.
 
 - v1.2.1 - Improve performance
 

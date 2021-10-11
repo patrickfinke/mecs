@@ -603,35 +603,6 @@ class Storage():
         self._ctype_to_container.clear()
         self._signature_to_container.clear()
 
-    def start(self, *systems, **kwargs):
-        """
-        Initialize the scene.
-
-        All systems must implement an `onStart(scene, **kwargs)` method where this scene instance will be passed as the first argument and the `kwargs` of this method will also be passed on. The systems will be called in the same order they are supplied to this method.
-        """
-
-        for system in systems:
-            system.onStart(self, **kwargs)
-
-    def update(self, *systems, **kwargs):
-        """
-        Update the scene.
-
-        All systems must implement an `onUpdate(scene, **kwargs)` method where this scene instance will be passed as the first argument and the `kwargs` of this method will also be passed on. The systems will be called in the same order they are supplied to this method.
-        """
-
-        for system in systems:
-            system.onUpdate(self, **kwargs)
-
-    def stop(self, *systems, **kwargs):
-        """Clean up the scene.
-
-        All systems must implement an 'onStop(scene, **kwargs)' method where this scene instance will be passed as the first argument and the `kwargs` of this method will also be passed on. The systems will be called in the same order they are supplied to this method.
-        """
-
-        for system in systems:
-            system.onStop(self, **kwargs)
-
     def select(self, *component_types):
         """
         Iterate over entities and their components.
