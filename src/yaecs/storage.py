@@ -250,8 +250,7 @@ class Storage():
         Iterate over all entities in the storage.
         """
 
-        for container in self._entity_to_container.values():
-            yield from container
+        yield from self._entity_to_container.keys()
 
     def create(self, component=None, entity_id=None):
         """
