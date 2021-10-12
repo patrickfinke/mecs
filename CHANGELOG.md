@@ -24,6 +24,7 @@ All notable changes to this project will be documented in this file. This projec
   - Add `Entity` class.
   - Remove `Storage.start()`, `Storage.update()` and `Storage.stop()`.
   - Rename project to `yaecs`.
+  - Change `Storage.select()` and `View.select()` to accept either single component types or iterables of types and return single component instances or iterables of instances respectively.
 
 - v1.2.1 - Improve performance
 

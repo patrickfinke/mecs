@@ -1,3 +1,6 @@
+from .component import ComponentMeta
+from .error import ComponentError
+
 class View():
     """
     A view of an entity storage (or anothe view) that only shows entities that are part of the underlying storage (or view) and match a given filter.
@@ -74,19 +77,23 @@ class View():
         for container in self._matching_containers():
             yield from container
 
-    def select(self, *component_types):
+    def select(self, component_type):
         """
         Iterate over entities and their components.
 
-        Yields pairs *(entity, components)* where *components* is a list of components that belong to *entity* and with types as specified in *component_types*. Raises *KeyError* if one of the entities does not have all the required component types.
+        Yields pairs *(entity, component)* where *component* is either a single component if a single component type was specified, or an iterable of components if an iterable of component types was specified.
         """
 
         for container in self._matching_containers():
-            if component_types:
+            if isinstance(component_type, ComponentMeta):
                 try:
-                    components = [container.component_list(ct) for ct in component_types]
+                    component_list = container.component_list(component_type)
                 except KeyError:
-                    raise KeyError(component_types)
+                    raise ComponentError(component_type)
+                yield from zip(container, component_list)
             else:
-                components = [([] for _ in range(len(container)))]
-            yield from zip(container, zip(*components))
+                try:
+                    component_lists = [container.component_list(ct) for ct in component_type]
+                except KeyError:
+                    raise ComponentError(component_type)
+                yield from zip(container, zip(*component_lists))
