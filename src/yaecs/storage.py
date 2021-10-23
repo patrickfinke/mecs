@@ -217,7 +217,7 @@ class Storage():
         else:
             entity_component_dict = container.component_dict(entity)
             entity_component_dict.update(component_dict)
-            self._remove_entity(entity)
+            self._remove_entity(container, entity)
             self._add_entity(entity, entity_component_dict)
 
     @property
