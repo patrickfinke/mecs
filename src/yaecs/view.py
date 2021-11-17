@@ -57,7 +57,7 @@ class View():
 
         return sum(len(container) for container in self._matching_containers())
 
-    def __contains__(self):
+    def __contains__(self, entity):
         """
         Check if a entity is in the storage and matches the filter.
         """

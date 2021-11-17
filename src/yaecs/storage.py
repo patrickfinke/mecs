@@ -238,7 +238,7 @@ class Storage():
 
         return len(self._entity_to_container)
 
-    def __contains__(self):
+    def __contains__(self, entity):
         """
         Check if an entity is in the storage.
         """
